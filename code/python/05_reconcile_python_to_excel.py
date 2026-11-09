@@ -106,7 +106,7 @@ for lob, (sh, col) in profit_sheets.items():
     rows.append(dict(lob=lob, metric="max yearly PV DE diff", excel=None, python=None, diff=max_pv))
     ok &= max_pv < TOL
 
-print(pd.DataFrame(rows).to_string(index=False, float_format=lambda x: f"{x:,.4f}"))
+print(pd.DataFrame(rows).to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.4f}"))
 
 # ----------------------------------------------------------------------------
 # Check 3: sensitivity tie-out.

@@ -206,6 +206,22 @@ synthetic generator are listed. A test fails if any value drifts from the regist
 
 The go-live checklist with owners is in [docs/RUNBOOK.md](docs/RUNBOOK.md) §2.
 
+**The in-force forecast and the pricing basis disagree on purpose.** The forecast projects the
+existing (synthetic) book on that book's own experience; new-business pricing gives that
+experience no credibility and uses the public basis. So:
+
+- The Medicaid book forecasts at 98–101% loss ratio, because its own trend (4.9%) runs ahead of
+  the rate action in its capitation history (3.5%). The new-contract NPV sets the rate update
+  equal to trend (ASOP 49: rates are certified to cover attainable cost). A book whose rates lag
+  trend is what the drift monitor escalates; it isn't a pricing assumption.
+- The D&V book runs at about 84%, against a priced ultimate of 70.5% from public individual
+  dental results. D&V is unprofitable even on the public figure. The design the market actually
+  sells (6-month wait on basic, 12-month on major) turns DE positive, +$50,146 per 1,000
+  (`output/npv/dv_product_options.csv`); the 8% reprice is the answer if the product keeps no
+  waiting periods.
+- High-Deductible G rests on one public carrier's relativity (0.18, flagged low confidence) and
+  is the first input to replace with Humana's filed relativities.
+
 ---
 
 ## Repository map

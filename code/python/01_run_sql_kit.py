@@ -129,7 +129,7 @@ for sql_file in sorted(SQL_DIR.glob("*.sql")):
     print(f"\n=== {sql_file.name} ===")
     result = con.execute(script).fetchdf()   # DuckDB runs all statements, returns the last result
     result.to_csv(OUT / f"{sql_file.stem}.csv", index=False)
-    print(result.head(12).to_string(index=False))
+    print(result.head(12).to_string(na_rep="n/a", index=False))
     if len(result) > 12:
         print(f"... {len(result)} rows total -> output/sql_results/{sql_file.stem}.csv")
 

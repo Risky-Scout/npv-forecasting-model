@@ -446,9 +446,9 @@ A_res["version1_bias_pct"] = [(real_v2[l].mean() - model_v1[l]) / abs(model_v1[l
 attrib_end = pd.DataFrame([dict(lob=l, step="Current model NPV (v4)", value=model[l], change=model[l] - real[l].mean()) for l in real])
 attrib = pd.concat([pd.DataFrame(rows_attr), attrib_end], ignore_index=True)
 pd.DataFrame(real).to_csv(OUT / "realized_npv_draws.csv", index=False)
-print(A_res.to_string(index=False, float_format=lambda x: f"{x:,.3f}" if abs(x) < 10 else f"{x:,.0f}"))
+print(A_res.to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.3f}" if abs(x) < 10 else f"{x:,.0f}"))
 print("\nWaterfall from model NPV to realized mean:")
-print(attrib.to_string(index=False, float_format=lambda x: f"{x:,.0f}"))
+print(attrib.to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.0f}"))
 
 # ----------------------------------------------------------------------------
 # TEST B: NPV with ESTIMATED assumptions vs TRUE assumptions
@@ -512,7 +512,7 @@ for lob, est in [("MEDSUPP", est_ms), ("DENTAL_VISION", est_dv)]:
                           estimated=float(tf["DENTAL_VISION"]), npv_true=base, npv_with_estimate=v_, npv_error=v_ - base))
 B_res = pd.DataFrame(rowsB)
 print("\nTEST B: NPV error from estimating assumptions from 4 years of experience")
-print(B_res[["lob", "assumption", "true", "estimated", "npv_true", "npv_with_estimate", "npv_error"]].to_string(index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 1 else f"{x:,.0f}"))
+print(B_res[["lob", "assumption", "true", "estimated", "npv_true", "npv_with_estimate", "npv_error"]].to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 1 else f"{x:,.0f}"))
 
 # ----------------------------------------------------------------------------
 # TEST C: process risk vs parameter risk
@@ -530,7 +530,7 @@ C_res = pd.DataFrame([dict(lob=l,
                            parameter_width=np.percentile(mc[l], 95) - np.percentile(mc[l], 5)) for l in real])
 C_res["parameter_to_process"] = C_res["parameter_width"] / C_res["process_width"]
 print("\nTEST C: width of 90% range - randomness (known assumptions) vs uncertainty about assumptions")
-print(C_res.to_string(index=False, float_format=lambda x: f"{x:,.1f}" if abs(x) < 100 else f"{x:,.0f}"))
+print(C_res.to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.1f}" if abs(x) < 100 else f"{x:,.0f}"))
 
 A_res.to_csv(OUT / "test_a_realized_vs_model.csv", index=False)
 attrib.to_csv(OUT / "test_a_bias_attribution.csv", index=False)

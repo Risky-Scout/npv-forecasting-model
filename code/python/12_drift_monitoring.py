@@ -151,7 +151,7 @@ def main() -> int:
     print(f"Drift monitoring: {summ['alerts']} ALERT, {summ['watch']} WATCH (credibility-scaled bands, k = {k}, persistence {persist} quarters)")
     pd.set_option("display.width", 220); pd.set_option("display.max_colwidth", 90)
     if len(al):
-        print(al[al.level == "ALERT"].to_string(index=False))
+        print(al[al.level == "ALERT"].to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.3f}" if abs(x) < 10 else f"{x:,.0f}"))
     print(f"Outputs written to {OUT}")
     return 0
 

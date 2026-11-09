@@ -300,7 +300,7 @@ def main() -> int:
 
     pd.set_option("display.width", 220)
     show = ind[["lob", "assumption", "current", "experience", "credibility_z", "indicated", "status"]]
-    print(show.to_string(index=False, float_format=lambda x: f"{x:,.4f}"))
+    print(show.to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.4f}"))
     print(f"\nREVIEW items for the assumption committee: {status['n_review']}")
     print(f"Assumption set sha256 {status['sha256'][:16]}... model version {status['model_version']}")
     if status["approved"]:

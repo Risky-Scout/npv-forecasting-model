@@ -1727,7 +1727,7 @@ def main() -> None:
     s = pd.DataFrame(summaries)
     s.to_csv(OUT / "npv_summary.csv", index=False)
     print("\nDeterministic NPV summary (version 4.2; public-basis assumptions, docs/ASSUMPTION_BASIS.md)")
-    print(s.to_string(index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 5 else f"{x:,.0f}"))
+    print(s.to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 5 else f"{x:,.0f}"))
 
     br = bridge()
     br.to_csv(OUT / "npv_bridge_v2_to_v4.csv", index=False)
@@ -1736,7 +1736,7 @@ def main() -> None:
     print("\nBridge: version 2 NPV -> v4 cash NPV -> v4 DE NPV ("
           + (f"non-neutral at the approved settings: {', '.join(_nn)}; the other v4 deterministic features are neutral)" if _nn
              else "v4 deterministic features are neutral at the approved settings)"))
-    print(br.to_string(index=False, float_format=lambda x: f"{x:,.0f}"))
+    print(br.to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.0f}"))
 
     tor = tornado()
     tor.to_csv(OUT / "npv_tornado.csv", index=False)
@@ -1753,7 +1753,7 @@ def main() -> None:
         ax.set_xlabel("NPV ($000)  green = favorable, red = adverse")
     plt.tight_layout(); plt.savefig(OUT / "npv_tornado.png", dpi=130); plt.close()
     print("\nTop driver by line (cash NPV):")
-    print(tor.loc[tor.groupby("lob")["swing"].idxmax(), ["lob", "driver", "swing", "de_swing"]].to_string(index=False))
+    print(tor.loc[tor.groupby("lob")["swing"].idxmax(), ["lob", "driver", "swing", "de_swing"]].to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.0f}"))
 
     print(f"\nRunning Monte Carlo ({A['monte_carlo']['n_sims']:,} scenarios, cash and DE NPV) ...")
     mc = monte_carlo()
@@ -1771,7 +1771,7 @@ def main() -> None:
     stats.loc["MEDICAID", col] = mc_nf["MEDICAID"].mean()
     stats.loc["MEDICAID_DE", col] = mc_nf["MEDICAID_DE"].mean()
     stats.to_csv(OUT / "npv_monte_carlo_stats.csv")
-    print(stats.to_string(float_format=lambda x: f"{x:,.3f}" if abs(x) < 1 else f"{x:,.0f}"))
+    print(stats.to_string(na_rep="n/a", float_format=lambda x: f"{x:,.3f}" if abs(x) < 1 else f"{x:,.0f}"))
     fig, axes = plt.subplots(1, 3, figsize=(16, 4.2))
     for ax, lob in zip(axes, PROJECT):
         for col, colr, lab in [(lob, "#12343B", "cash"), (lob + "_DE", "#E9C46A", "DE (after tax)")]:
@@ -1786,53 +1786,53 @@ def main() -> None:
     att.to_csv(OUT / "npv_monte_carlo_attribution.csv", index=False)
     print("\nMonte Carlo attribution (P(NPV < 0), cash):")
     piv = att[att.measure.isin(list(PROJECT))].pivot(index="step", columns="measure", values="prob_negative")[list(PROJECT)]
-    print(piv.to_string(float_format=lambda x: f"{x:6.1%}"))
+    print(piv.to_string(na_rep="n/a", float_format=lambda x: f"{x:6.1%}"))
 
     be = breakeven()
     be.to_csv(OUT / "npv_breakeven.csv", index=False)
     print("\nBreak-even (reverse stress) - level at which NPV = 0, everything else at base:")
-    print(be.to_string(index=False, float_format=lambda x: f"{x:,.4f}"))
+    print(be.to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.4f}"))
 
     ps = planning_scenarios()
     ps.to_csv(OUT / "npv_planning_scenarios.csv", index=False)
     print("\nPlanning scenarios (DE NPV):")
-    print(ps.pivot(index="scenario", columns="lob", values="de_npv")[list(PROJECT)].to_string(float_format=lambda x: f"{x:,.0f}"))
+    print(ps.pivot(index="scenario", columns="lob", values="de_npv")[list(PROJECT)].to_string(na_rep="n/a", float_format=lambda x: f"{x:,.0f}"))
 
     js = judgment_sensitivity()
     js.to_csv(OUT / "npv_judgment_sensitivity.csv", index=False)
     print("\nJudgment assumptions across their documented ranges (DE NPV; ASOP 56 §3.6.1):")
-    print(js[["lob", "judgment_assumption", "base_de", "de_low_setting", "de_high_setting", "de_swing", "sign_changes"]].to_string(index=False, float_format=lambda x: f"{x:,.0f}"))
+    print(js[["lob", "judgment_assumption", "base_de", "de_low_setting", "de_high_setting", "de_swing", "sign_changes"]].to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.0f}"))
 
     mcs = mc_parameter_sensitivity()
     mcs.to_csv(OUT / "npv_mc_parameter_sensitivity.csv", index=False)
     print("\nMonte Carlo parameters across their documented ranges, P(DE NPV < 0):")
     print(mcs[mcs.measure.str.endswith("_DE")].pivot_table(index=["parameter", "setting"], columns="measure", values="prob_negative",
-                                                          sort=False).to_string(float_format=lambda x: f"{x:.2%}"))
+                                                          sort=False).to_string(na_rep="n/a", float_format=lambda x: f"{x:.2%}"))
 
     prc, cellp = pricing_solve()
     prc.to_csv(OUT / "npv_pricing_solve.csv", index=False)
     cellp.to_csv(OUT / "medsupp_cell_pricing.csv", index=False)
     print(f"\nv4.2 risk-based pricing: each line priced so P(DE NPV < 0) <= {PRICING['risk_tolerance']:.0%} (config/pricing_targets.json)")
     print(prc[["lob", "item", "current", "required_minimum", "recommended", "change", "p_de_negative_recommended", "de_npv_recommended", "status"]]
-          .to_string(index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 5 else f"{x:,.0f}"))
-    print(cellp[["band", "plan", "change", "status", "market_check"]].to_string(index=False, float_format=lambda x: f"{x:+.2%}"))
+          .to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 5 else f"{x:,.0f}"))
+    print(cellp[["band", "plan", "change", "status", "market_check"]].to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:+.2%}"))
 
     dvo = dv_product_options()
     dvo.to_csv(OUT / "dv_product_options.csv", index=False)
     print("\nD&V product options (waiting periods defer pent-up; upper bounds):")
-    print(dvo.to_string(index=False, float_format=lambda x: f"{x:,.0f}" if abs(x) >= 5 else f"{x:.3f}"))
+    print(dvo.to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.0f}" if abs(x) >= 5 else f"{x:.3f}"))
 
     rb = medsupp_rating_bases()
     rb.to_csv(OUT / "medsupp_rating_bases.csv", index=False)
     print("\nMed Supp portfolio by rating basis (GA, AZ, FL, MO prohibit attained-age rating):")
-    print(rb[rb.band == "PORTFOLIO"][["basis", "cash_npv_per_1000", "pv_loss_ratio"]].to_string(index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 5 else f"{x:,.0f}"))
+    print(rb[rb.band == "PORTFOLIO"][["basis", "cash_npv_per_1000", "pv_loss_ratio"]].to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 5 else f"{x:,.0f}"))
 
     pf = medsupp_portfolio()
     pf.to_csv(OUT / "medsupp_model_points.csv", index=False)
     port = pf[pf.band == "PORTFOLIO"].iloc[0]
     print(f"\nMed Supp new-business portfolio (model points): cash NPV per 1,000 {port.cash_npv_per_1000:,.0f}, "
           f"DE {port.de_npv_per_1000:,.0f} (base cell Plan G at 65: {npv('MEDSUPP', A['MEDSUPP'], g):,.0f})")
-    print(pf.to_string(index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 5 else f"{x:,.0f}"))
+    print(pf.to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 5 else f"{x:,.0f}"))
     print(f"\nOutputs written to {OUT}")
 
 

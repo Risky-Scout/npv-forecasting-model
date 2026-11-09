@@ -347,7 +347,7 @@ def main() -> None:
     s = pd.DataFrame(summaries)
     s.to_csv(OUT / "npv_summary.csv", index=False)
     print("\nDeterministic NPV summary (illustrative assumptions)")
-    print(s.to_string(index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 5 else f"{x:,.0f}"))
+    print(s.to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 5 else f"{x:,.0f}"))
 
     tor = tornado()
     tor.to_csv(OUT / "npv_tornado.csv", index=False)
@@ -365,7 +365,7 @@ def main() -> None:
         ax.set_xlabel("NPV ($000)  green = favorable, red = adverse")
     plt.tight_layout(); plt.savefig(OUT / "npv_tornado.png", dpi=130); plt.close()
     print("\nTop driver by line:")
-    print(tor.loc[tor.groupby("lob")["swing"].idxmax(), ["lob", "driver", "swing"]].to_string(index=False))
+    print(tor.loc[tor.groupby("lob")["swing"].idxmax(), ["lob", "driver", "swing"]].to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.0f}"))
 
     print(f"\nRunning Monte Carlo ({A['monte_carlo']['n_sims']:,} scenarios) ...")
     mc = monte_carlo()
@@ -374,7 +374,7 @@ def main() -> None:
                                 "P95": np.percentile(mc[lob], 95), "mean": mc[lob].mean(),
                                 "prob_npv_negative": (mc[lob] < 0).mean()} for lob in mc}).T
     stats.to_csv(OUT / "npv_monte_carlo_stats.csv")
-    print(stats.to_string(float_format=lambda x: f"{x:,.3f}" if abs(x) < 1 else f"{x:,.0f}"))
+    print(stats.to_string(na_rep="n/a", float_format=lambda x: f"{x:,.3f}" if abs(x) < 1 else f"{x:,.0f}"))
     fig, axes = plt.subplots(1, 3, figsize=(16, 4.2))
     for ax, lob in zip(axes, mc.columns):
         ax.hist(mc[lob] / 1e3, bins=60, color="#1F3864", alpha=0.85)
