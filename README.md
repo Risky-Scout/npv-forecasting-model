@@ -34,8 +34,10 @@ experience takes weight against these public assumptions on the first real cycle
    make run
    ```
    `make run` first checks the environment and says what's missing if anything is.
-3. Results land in `output/`. Open `output/Humana_NPV_Forecasting_Model.xlsx` (download it from
-   the file explorer) or read `output/results.json`.
+3. When it finishes it prints the headline results, the pricing recommendations and every check
+   (Excel = Python, backtest, tests). `make results` prints them again at any time. For the
+   workbook, right-click `output/Humana_NPV_Forecasting_Model.xlsx` in the file explorer and
+   choose **Download**.
 
 ### On your own machine
 
@@ -55,6 +57,7 @@ python tests/e2e_production_run.py   # production mode end to end, after a relea
 |---|---|
 | `make run` / `python run_all.py` | Full release run. Stops at the first failing step |
 | `make quick` / `python run_all.py --skip-tests` | Same, without the 113-test suite |
+| `make results` / `python show_results.py` | Headline results, pricing recommendations and checks of the last run |
 | `make test` / `python tests/run_tests.py` | Tests only (after a run) |
 | `make production` / `python tests/e2e_production_run.py` | Production mode on production-layout extracts; must reproduce the release run exactly |
 
@@ -206,6 +209,7 @@ The go-live checklist with owners is in [docs/RUNBOOK.md](docs/RUNBOOK.md) §2.
 | Path | Contents |
 |---|---|
 | `run_all.py` | Runs every step in dependency order; fail-fast |
+| `show_results.py` | Prints the headline results and checks of the last run |
 | `code/python/` | Pipeline steps, numbered in run order (00 generator and ingest through 12 drift monitoring), the NPV engine (`04_npv_engine.py`) and `npv_assumptions.json` |
 | `code/sql/` | DuckDB SQL kit: DQ checks, silver/gold layers, completion factors, lapse study, A/E |
 | `code/databricks/` | The same pipeline as a Databricks notebook (Bronze/Silver/Gold, Delta) |
