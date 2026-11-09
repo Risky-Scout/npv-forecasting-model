@@ -44,6 +44,10 @@ RUN = _ac.run_config()
 ap = argparse.ArgumentParser()
 ap.add_argument("--mode", choices=["synthetic", "production"], default=RUN.get("mode", "synthetic"))
 ap.add_argument("--skip-tests", action="store_true", help="skip the test suite (it always runs in synthetic mode by default)")
+ap.add_argument("--core", action="store_true",
+                help="the model only, about 4 minutes: every pipeline step and the Excel = Python reconciliation on the "
+                     "approved set, without the extended validation (Excel tie-outs at non-neutral terms and at the "
+                     "recommended prices, the test suite, the local Databricks job). Release runs use the full run.")
 args = ap.parse_args()
 if args.mode != RUN.get("mode"):
     sys.exit(f"--mode {args.mode} differs from config/run_config.json mode {RUN.get('mode')!r}; "
@@ -79,6 +83,8 @@ steps = [
     (SYN, sys.executable, ROOT / "tests" / "e2e_databricks_job_local.py"),  # v4.1: the Databricks job definition, run in its DAG order
     (SYN, sys.executable, ROOT / "export_results.py"),                # every quoted figure -> output/results.json
 ]
+# Extended validation, skipped by --core. The core run still reconciles Excel to Python on the approved set.
+EXTENDED = {"e2e_excel_nonneutral.py", "e2e_excel_pricing.py", "run_tests.py", "e2e_databricks_job_local.py"}
 log = []
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -98,8 +104,10 @@ def finish(code: int, msg: str):
 print(f"Run mode: {args.mode}  (run id {RUN.get('run_id')})")
 for modes, interp, script in steps:
     name = Path(script).name
-    if args.mode not in modes or (args.skip_tests and name == "run_tests.py"):
-        log.append(dict(step=name, status="SKIPPED", reason=f"not part of a {args.mode} run" if args.mode not in modes else "--skip-tests"))
+    if args.mode not in modes or (args.skip_tests and name == "run_tests.py") or (args.core and name in EXTENDED):
+        reason = (f"not part of a {args.mode} run" if args.mode not in modes
+                  else "--core (extended validation)" if args.core and name in EXTENDED else "--skip-tests")
+        log.append(dict(step=name, status="SKIPPED", reason=reason))
         continue
     print(f"\n{'=' * 78}\n>>> {name}\n{'=' * 78}", flush=True)
     t = time.time()

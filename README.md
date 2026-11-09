@@ -31,13 +31,17 @@ experience takes weight against these public assumptions on the first real cycle
    the editor opens when everything is in place.
 2. In the terminal at the bottom (Terminal → New Terminal if none is open):
    ```bash
-   make run
+   make quick    # the model, about 4 minutes
+   make run      # full release validation, about 15 minutes
    ```
-   `make run` first checks the environment and says what's missing if anything is.
-3. When it finishes it prints the headline results, the pricing recommendations and every check
-   (Excel = Python, backtest, tests). `make results` prints them again at any time. For the
-   workbook, right-click `output/Humana_NPV_Forecasting_Model.xlsx` in the file explorer and
-   choose **Download**.
+   `make quick` runs every pipeline step (synthetic book, controls, studies, NPV engine and
+   pricing solve, forecast, Excel rebuild) and reconciles Excel to Python to the cent. `make run`
+   adds the extended validation: the Excel tie-outs at non-neutral contract terms and at the
+   recommended prices, the 113 tests and the local Databricks job. Both check the environment
+   first and say what's missing if anything is.
+3. Each ends by printing the headline results, the pricing recommendations and the checks.
+   `make results` prints them again at any time. For the workbook, right-click
+   `output/Humana_NPV_Forecasting_Model.xlsx` in the file explorer and choose **Download**.
 
 ### On your own machine
 
@@ -55,8 +59,8 @@ python tests/e2e_production_run.py   # production mode end to end, after a relea
 
 | Command | What it does |
 |---|---|
-| `make run` / `python run_all.py` | Full release run. Stops at the first failing step |
-| `make quick` / `python run_all.py --skip-tests` | Same, without the 113-test suite |
+| `make run` / `python run_all.py` | Full release run with the extended validation, about 15 minutes. Stops at the first failing step |
+| `make quick` / `python run_all.py --core` | The model and the Excel = Python reconciliation, about 4 minutes |
 | `make results` / `python show_results.py` | Headline results, pricing recommendations and checks of the last run |
 | `make test` / `python tests/run_tests.py` | Tests only (after a run) |
 | `make production` / `python tests/e2e_production_run.py` | Production mode on production-layout extracts; must reproduce the release run exactly |

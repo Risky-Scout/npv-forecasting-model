@@ -8,8 +8,8 @@ PY ?= python
 help:
 	@echo "make check       confirm Python packages, Java and LibreOffice are installed"
 	@echo "make setup       install the pinned Python packages (Python 3.12+; 3.13 recommended)"
-	@echo "make run         full release run: synthetic book -> NPV -> forecast -> Excel tie-out -> tests (about 15 min)"
-	@echo "make quick       same run without the test suite"
+	@echo "make quick       the model: every pipeline step and the Excel = Python reconciliation (about 4 min)"
+	@echo "make run         full release run: adds the extended Excel tie-outs, 113 tests, local Databricks job (about 15 min)"
 	@echo "make results     print the headline results and checks of the last run"
 	@echo "make test        test suite only (needs a completed run)"
 	@echo "make production  production-mode end-to-end test, two phases (after make run)"
@@ -32,7 +32,7 @@ run: check
 	$(PY) show_results.py
 
 quick: check
-	$(PY) run_all.py --skip-tests
+	$(PY) run_all.py --core
 	$(PY) show_results.py
 
 results:
