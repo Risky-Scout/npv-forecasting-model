@@ -3,9 +3,10 @@
 
 PY ?= python
 
-.PHONY: help setup run quick test production clean
+.PHONY: help check setup run quick test production clean
 
 help:
+	@echo "make check       confirm Python packages, Java and LibreOffice are installed"
 	@echo "make setup       install the pinned Python packages (Python 3.12+; 3.13 recommended)"
 	@echo "make run         full release run: synthetic book -> NPV -> forecast -> Excel tie-out -> tests (about 15 min)"
 	@echo "make quick       same run without the test suite"
@@ -13,20 +14,28 @@ help:
 	@echo "make production  production-mode end-to-end test, two phases (after make run)"
 	@echo "make clean       delete generated data and outputs"
 
+check:
+	@$(PY) -c "import numpy, pandas, scipy, statsmodels, duckdb, matplotlib, openpyxl, pyarrow, pyspark, pytest" 2>/dev/null \
+	  || { echo "Python packages are not installed. In a Codespace run: bash .devcontainer/setup.sh   Otherwise: make setup"; exit 1; }
+	@command -v java >/dev/null || { echo "Java 17+ is not installed (needed for the local Spark run of the Databricks notebook)."; exit 1; }
+	@{ command -v soffice || command -v libreoffice || test -x /Applications/LibreOffice.app/Contents/MacOS/soffice; } >/dev/null \
+	  || { echo "LibreOffice is not installed (needed to recalculate the workbook's formulas)."; exit 1; }
+	@echo "Environment OK: $$($(PY) --version), Java, LibreOffice, all Python packages."
+
 setup:
 	$(PY) -m pip install --upgrade pip
 	$(PY) -m pip install -r requirements.txt
 
-run:
+run: check
 	$(PY) run_all.py
 
-quick:
+quick: check
 	$(PY) run_all.py --skip-tests
 
-test:
+test: check
 	$(PY) tests/run_tests.py
 
-production:
+production: check
 	$(PY) tests/e2e_production_run.py
 
 clean:

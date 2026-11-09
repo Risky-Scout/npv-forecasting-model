@@ -26,12 +26,14 @@ experience takes weight against these public assumptions on the first real cycle
 
 ### In the browser (nothing to install)
 
-1. Click **Open in GitHub Codespaces** above, then **Create codespace**. The first build takes a
-   few minutes; it installs Python 3.13, Java and LibreOffice.
-2. In the terminal that opens:
+1. Click **Open in GitHub Codespaces** above, then **Create codespace**. The first build takes
+   about five minutes while it installs Python 3.13, Java, LibreOffice and the pinned packages;
+   the editor opens when everything is in place.
+2. In the terminal at the bottom (Terminal → New Terminal if none is open):
    ```bash
    make run
    ```
+   `make run` first checks the environment and says what's missing if anything is.
 3. Results land in `output/`. Open `output/Humana_NPV_Forecasting_Model.xlsx` (download it from
    the file explorer) or read `output/results.json`.
 

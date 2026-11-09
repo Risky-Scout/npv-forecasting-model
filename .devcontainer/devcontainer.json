@@ -5,7 +5,8 @@
     "ghcr.io/devcontainers/features/java:1": { "version": "21" }
   },
   "hostRequirements": { "cpus": 4, "memory": "8gb" },
-  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "onCreateCommand": "bash .devcontainer/setup.sh",
+  "waitFor": "onCreateCommand",
   "customizations": {
     "vscode": {
       "extensions": ["ms-python.python", "ms-toolsai.datawrangler", "mechatroner.rainbow-csv"]
