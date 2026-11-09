@@ -41,14 +41,21 @@ manifest = json.loads(need(OUT / "run_manifest.json").read_text())
 steps = {s["step"]: s["status"] for s in (manifest.get("steps") or {}).get("steps", [])}
 summary = {r["lob"]: r for r in rows(OUT / "npv" / "npv_summary.csv")}
 pricing = rows(OUT / "npv" / "npv_pricing_solve.csv")
-p_neg = (manifest.get("v4_results") or {}).get("monte_carlo_prob_negative", {})
-port = (manifest.get("v4_results") or {}).get("medsupp_portfolio_per_1000", {})
+# Read from the run's own output files, so the summary also works when the manifest withholds results
+p_neg = {r[""]: r["prob_npv_negative"] for r in rows(OUT / "npv" / "npv_monte_carlo_stats.csv")}
+port = next(({"cash_npv": r["cash_npv_per_1000"], "de_npv": r["de_npv_per_1000"]}
+             for r in rows(OUT / "npv" / "medsupp_model_points.csv") if r["band"] == "PORTFOLIO"), {})
 run, a = manifest.get("run", {}), manifest.get("assumptions") or {}
+approved = bool(a.get("approved"))
 
 print(f"\nNPV forecasting model {a.get('model_version', '')}: last run {run.get('run_id')} "
       f"({run.get('mode')} mode)")
 print(f"Status: {manifest.get('results_status')}")
-print(f"Assumption set: {a.get('approval_id')} (approved: {a.get('approved')})")
+if approved:
+    print(f"Assumption set: {a.get('approval_id')} (approved)")
+else:
+    print("Assumption set: edited, not approved. The figures below are what the edited assumptions produce;\n"
+          "  the manifest withholds them from release until the set is approved (README, 'Changing an assumption').")
 
 print("\nValuation as priced today")
 print(f"  {'Line':<44}{'Cash NPV':>14}{'DE NPV':>14}{'PV loss ratio':>15}{'P(DE < 0)':>11}")
@@ -66,9 +73,13 @@ for r in pricing:
     if item == "Premium (risk-based target)" and lob == "MEDSUPP":
         print(f"  Med Supp Plan G at 65: {status.lower()}; {r['note']}")
     elif item == "Premium (risk-based target)" and lob == "DENTAL_VISION":
-        print(f"  Dental & Vision: {status.lower()} ${float(r['current']):,.2f} -> ${float(r['recommended']):,.2f} a year "
-              f"({float(r['change']) * 100:+.1f}%, {r['note']}); P(DE < 0) "
-              f"{pct(r['p_de_negative_current'])} -> {pct(r['p_de_negative_recommended'])}; {r['market_check']}")
+        if status.upper().startswith("MEETS"):
+            print(f"  Dental & Vision: {status.lower()} (${float(r['current']):,.2f} a year); "
+                  f"P(DE < 0) {pct(r['p_de_negative_current'])}; {r['market_check']}")
+        else:
+            print(f"  Dental & Vision: {status.lower()} ${float(r['current']):,.2f} -> ${float(r['recommended']):,.2f} a year "
+                  f"({float(r['change']) * 100:+.1f}%, {r['note']}); P(DE < 0) "
+                  f"{pct(r['p_de_negative_current'])} -> {pct(r['p_de_negative_recommended'])}; {r['market_check']}")
     elif item.startswith("Portfolio risk check"):
         print(f"  Med Supp portfolio: P(DE < 0) {pct(r['p_de_negative_current'])} -> "
               f"{pct(r['p_de_negative_recommended'])} at the recommended cell prices "
@@ -78,7 +89,7 @@ for r in pricing:
 
 recon = manifest.get("reconciliation") or {}
 print("\nChecks in this run")
-print(f"  Excel = Python, approved set:                {recon.get('result')} "
+print(f"  Excel = Python, this run's assumptions:      {recon.get('result')} "
       f"({recon.get('sensitivity_drivers_compared')} sensitivities, max difference "
       f"${float(recon.get('max_sensitivity_diff') or 0):.2f})")
 for name, label in [("e2e_excel_nonneutral.py", "Excel = Python, non-neutral contract terms"),
@@ -88,7 +99,8 @@ for name, label in [("e2e_excel_nonneutral.py", "Excel = Python, non-neutral con
                     ("e2e_databricks_job_local.py", "Databricks job, 17 tasks run locally")]:
     print(f"  {label + ':':<45}{steps.get(name, 'not run')}")
 alerts = (manifest.get("monitoring") or {}).get("alerts")
-print(f"  {'Drift monitor alerts:':<45}{alerts} (all intended; see README, section: What you'll see in the log)")
+print(f"  {'Drift monitor alerts:':<45}{alerts} " + ("(all intended; see README, section: What you'll see in the log)" if approved
+      else "(the approved base run has 5; the difference comes from the edited assumptions)"))
 
 print("\nMore detail")
 print("  Workbook:  output/Humana_NPV_Forecasting_Model.xlsx  (in a Codespace: right-click > Download)")

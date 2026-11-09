@@ -26,10 +26,11 @@ experience takes weight against these public assumptions on the first real cycle
 
 ### In the browser (nothing to install)
 
-1. Click **Open in GitHub Codespaces** above, then **Create codespace**. The first build takes
-   about five minutes while it installs Python 3.13, Java, LibreOffice and the pinned packages;
-   the editor opens when everything is in place.
-2. In the terminal at the bottom (Terminal → New Terminal if none is open):
+1. Click **Open in GitHub Codespaces** above, then **Create codespace**. The environment (Python
+   3.13, Java, LibreOffice and the pinned packages) is prebuilt, so the editor usually opens in a
+   minute or two; without the prebuilt image it takes about five. It opens only once everything
+   is installed.
+2. In the terminal at the bottom of the editor (if none is open: ☰ menu → Terminal → New Terminal):
    ```bash
    make quick    # the model, about 4 minutes
    make run      # full release validation, about 15 minutes
@@ -46,7 +47,10 @@ experience takes weight against these public assumptions on the first real cycle
 ### On your own machine
 
 Needs Python 3.12 or newer (3.13 recommended), Java 17 or newer (for the local Spark run of the
-Databricks notebook) and LibreOffice (headless, to recalculate the workbook's formulas).
+Databricks notebook) and LibreOffice (headless, to recalculate the workbook's formulas). These
+commands are tested on Linux, in the Codespace and on GitHub's runners. macOS should work the same
+way with Homebrew's `python@3.13`, `openjdk` and the LibreOffice app, but it isn't part of the
+automated checks. On Windows, use the Codespace.
 
 ```bash
 git clone https://github.com/Risky-Scout/npv-forecasting-model.git
@@ -78,9 +82,25 @@ the run still ends with `All steps completed.`:
   base DE NPV is below break-even (D&V and Medicaid).
 
 The data generator uses a fixed seed, so every run reproduces the figures below to the dollar.
-To change an assumption, edit `code/python/npv_assumptions.json` and rerun. The assumption gate
-will stop the run until the new set is approved (`docs/RUNBOOK.md` §3 shows how), which is the
-point of the gate.
+
+### Changing an assumption
+
+Edit a value in `code/python/npv_assumptions.json`, then run `make quick`. For example, set
+`DENTAL_VISION` → `annual_premium_year1` from `468.0` to `505.32` (the model's recommended price):
+D&V DE NPV moves from −$40,686 to +$21,335 with P(DE < 0) of 9.8%, and Excel still ties to
+Python to the cent on the edited set.
+
+The governance controls treat an edited set the way they would in production review:
+
+- The assumption gate prints `NOT APPROVED` and, in synthetic mode, lets the run continue.
+- The run manifest marks the results `WITHHELD` until the set is approved. `make quick` and
+  `make results` still show every figure the edited set produces, labelled as not approved.
+- `make run` is the release validation of the approved set. Its tests check every value against
+  the assumption register, so it fails on an edited set, by design.
+- In production mode an unapproved set stops the run at the gate. Approving a set means recording
+  its hash in `config/assumption_approvals.json` (`docs/RUNBOOK.md` §2, item 6).
+
+To return to the approved assumptions: `git checkout code/python/npv_assumptions.json`.
 
 ---
 
