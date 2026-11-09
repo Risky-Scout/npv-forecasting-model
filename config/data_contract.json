@@ -1,0 +1,160 @@
+{
+  "_readme": "Data contract for each source feed: required columns, types, nullability and freshness. A feed that breaks its contract stops the run before any data-quality check or calculation. In production each source has a named data owner who agrees changes to this file.",
+  "sources": {
+    "members": {
+      "file": "data/members.csv",
+      "owner": "Enrollment systems (synthetic example)",
+      "columns": {
+        "member_id": {
+          "type": "BIGINT",
+          "nullable": false
+        },
+        "lob": {
+          "type": "VARCHAR",
+          "nullable": false,
+          "allowed": [
+            "MEDSUPP",
+            "DENTAL_VISION",
+            "MEDICAID"
+          ]
+        },
+        "state": {
+          "type": "VARCHAR",
+          "nullable": false
+        },
+        "plan": {
+          "type": "VARCHAR",
+          "nullable": false
+        },
+        "rate_cell": {
+          "type": "VARCHAR",
+          "nullable": true
+        },
+        "issue_month": {
+          "type": "MONTH",
+          "nullable": false
+        },
+        "issue_age": {
+          "type": "BIGINT",
+          "nullable": false
+        },
+        "term_month": {
+          "type": "MONTH",
+          "nullable": true
+        },
+        "term_reason": {
+          "type": "VARCHAR",
+          "nullable": true
+        }
+      },
+      "primary_key": [
+        "member_id"
+      ]
+    },
+    "member_months": {
+      "file": "data/member_months.csv",
+      "owner": "Enrollment systems (synthetic example)",
+      "columns": {
+        "member_id": {
+          "type": "BIGINT",
+          "nullable": false
+        },
+        "lob": {
+          "type": "VARCHAR",
+          "nullable": false,
+          "allowed": [
+            "MEDSUPP",
+            "DENTAL_VISION",
+            "MEDICAID"
+          ]
+        },
+        "month": {
+          "type": "MONTH",
+          "nullable": false
+        },
+        "state": {
+          "type": "VARCHAR",
+          "nullable": false
+        },
+        "plan": {
+          "type": "VARCHAR",
+          "nullable": false
+        },
+        "rate_cell": {
+          "type": "VARCHAR",
+          "nullable": true
+        },
+        "premium": {
+          "type": "DOUBLE",
+          "nullable": false
+        }
+      },
+      "freshness": {
+        "column": "month",
+        "must_equal": "experience_end"
+      },
+      "volume": {
+        "group_by": [
+          "lob",
+          "month"
+        ],
+        "max_drop_vs_prior": 0.4,
+        "through": "experience_end"
+      }
+    },
+    "claims": {
+      "file": "data/claims.csv",
+      "owner": "Claims systems (synthetic example)",
+      "columns": {
+        "claim_id": {
+          "type": "BIGINT",
+          "nullable": false
+        },
+        "member_id": {
+          "type": "BIGINT",
+          "nullable": false
+        },
+        "lob": {
+          "type": "VARCHAR",
+          "nullable": false,
+          "allowed": [
+            "MEDSUPP",
+            "DENTAL_VISION",
+            "MEDICAID"
+          ]
+        },
+        "incurred_month": {
+          "type": "MONTH",
+          "nullable": false
+        },
+        "paid_month": {
+          "type": "MONTH",
+          "nullable": false
+        },
+        "paid_amount": {
+          "type": "DOUBLE",
+          "nullable": false
+        },
+        "service_category": {
+          "type": "VARCHAR",
+          "nullable": false
+        }
+      },
+      "primary_key": [
+        "claim_id"
+      ],
+      "freshness": {
+        "column": "paid_month",
+        "must_equal": "paid_through"
+      },
+      "volume": {
+        "group_by": [
+          "lob",
+          "paid_month"
+        ],
+        "max_drop_vs_prior": 0.4,
+        "through": "experience_end"
+      }
+    }
+  }
+}

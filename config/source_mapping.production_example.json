@@ -1,0 +1,113 @@
+{
+  "_readme": "EXAMPLE production mapping. Column names, codes, formats and paths below are illustrative placeholders, not Humana's real data dictionary: they show the shape the mapping takes. Before the first production run, the data owner for each feed replaces them with the real extract layout (see docs/DATA_REQUEST.md), and tests/test_v3_production.py is rerun against a sample extract. Months may arrive as YYYYMM integers; codes are mapped explicitly so an unexpected code stops the run instead of being dropped. Month formats: CSV and integer months use a strftime format such as %Y%m; a native Parquet DATE or TIMESTAMP column arrives as text like 2025-07-01 and must be mapped with %Y-%m-%d.",
+  "source_root": "/Volumes/actuarial/npv_forecasting/landing/2026-02",
+  "feeds": {
+    "members": {
+      "source": "ENROLLMENT_MEMBER.csv",
+      "target": "data/members.csv",
+      "format": "csv",
+      "columns": {
+        "member_id": "MBR_ID",
+        "lob": "PROD_LINE_CD",
+        "state": "ST_CD",
+        "plan": "PLAN_CD",
+        "rate_cell": "RATE_CELL_CD",
+        "issue_month": "EFF_YYYYMM",
+        "issue_age": "ISSUE_AGE",
+        "term_month": "TERM_YYYYMM",
+        "term_reason": "TERM_RSN_CD"
+      },
+      "value_maps": {
+        "lob": {
+          "MS": "MEDSUPP",
+          "DV": "DENTAL_VISION",
+          "MCD": "MEDICAID"
+        },
+        "term_reason": {
+          "VL": "LAPSE",
+          "DE": "DEATH",
+          "DS": "DISENROLL",
+          "": ""
+        }
+      },
+      "month_columns": {
+        "issue_month": "%Y%m",
+        "term_month": "%Y%m"
+      }
+    },
+    "member_months": {
+      "source": "ENROLLMENT_ELIG_MONTH.csv",
+      "target": "data/member_months.csv",
+      "format": "csv",
+      "columns": {
+        "member_id": "MBR_ID",
+        "lob": "PROD_LINE_CD",
+        "month": "ELIG_YYYYMM",
+        "state": "ST_CD",
+        "plan": "PLAN_CD",
+        "rate_cell": "RATE_CELL_CD",
+        "premium": "PREM_AMT"
+      },
+      "value_maps": {
+        "lob": {
+          "MS": "MEDSUPP",
+          "DV": "DENTAL_VISION",
+          "MCD": "MEDICAID"
+        }
+      },
+      "month_columns": {
+        "month": "%Y%m"
+      }
+    },
+    "claims": {
+      "source": "CLAIMS_LINE_SUMMARY.csv",
+      "target": "data/claims.csv",
+      "format": "csv",
+      "columns": {
+        "claim_id": "CLM_ID",
+        "member_id": "MBR_ID",
+        "lob": "PROD_LINE_CD",
+        "incurred_month": "INCRD_YYYYMM",
+        "paid_month": "PAID_YYYYMM",
+        "paid_amount": "PAID_AMT",
+        "service_category": "SVC_CAT_CD"
+      },
+      "value_maps": {
+        "lob": {
+          "MS": "MEDSUPP",
+          "DV": "DENTAL_VISION",
+          "MCD": "MEDICAID"
+        }
+      },
+      "month_columns": {
+        "incurred_month": "%Y%m",
+        "paid_month": "%Y%m"
+      }
+    },
+    "finance_controls": {
+      "source": "GL_CONTROL_TOTALS.csv",
+      "target": "data/finance_controls.csv",
+      "format": "csv",
+      "columns": {
+        "control": "CTRL_TYPE",
+        "lob": "PROD_LINE_CD",
+        "month": "ACCT_YYYYMM",
+        "amount": "AMT"
+      },
+      "value_maps": {
+        "lob": {
+          "MS": "MEDSUPP",
+          "DV": "DENTAL_VISION",
+          "MCD": "MEDICAID"
+        },
+        "control": {
+          "PAID_CLM": "paid_claims",
+          "PREM": "premium"
+        }
+      },
+      "month_columns": {
+        "month": "%Y%m"
+      }
+    }
+  }
+}

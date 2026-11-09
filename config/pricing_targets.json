@@ -1,0 +1,81 @@
+{
+ "_readme": "v4.2 risk-based pricing targets for 04_npv_engine.pricing_solve(). Each line is priced so that the probability of a negative DE NPV in the Monte Carlo (parameter risk + process risk + filing response, 10,000 scenarios, common random numbers) does not exceed risk_tolerance: equivalently, the risk_tolerance-quantile of DE NPV is zero. DE NPV = 0 alone (break-even at the hurdle rate) would leave about a one-in-two chance of failing the hurdle, so the margin above break-even is sized by each line's own risk. Trend stays at its best estimate (the margin protects against trend coming in worse; it does not replace the assumption). Humana's corporate pricing policy sets risk_tolerance; 10% is the shipped default (judgment). Constraints are checked, never relaxed: a line whose target cannot be met inside them is reported as such (Medicaid: do not bid at these terms). This file is covered by the assumption approval hash.",
+ "risk_tolerance": 0.1,
+ "risk_tolerance_status": "J (Humana corporate pricing policy; default 10%)",
+ "lines": {
+  "MEDSUPP": {
+   "lever": "annual_premium_year1",
+   "lever_label": "Plan G issue-age-65 year-1 premium (all model points scale with it)",
+   "min_pv_loss_ratio": 0.65,
+   "min_pv_loss_ratio_basis": "NAIC Medicare Supplement Model Regulation minimum loss ratio, individual policies 65% (statute)",
+   "market_reference": 2323.0,
+   "market_reference_basis": "KFF: 2025 average Plan G premium $194/month ($2,323/yr), all ages. An age-65 underwritten new issue prices below the all-ages average, so a solved premium at or below it is competitive.",
+   "cell_margin_rule": "Each model point (issue-age band x plan) is priced to the base cell's DE margin (DE NPV / PV premium) at the recommended premium, so every cell carries the same risk-adjusted margin.",
+   "market_plan_relativity_range": {
+    "G": [
+     1.0,
+     1.0
+    ],
+    "N": [
+     0.65,
+     0.9
+    ],
+    "HDG": [
+     0.18,
+     0.18
+    ]
+   },
+   "market_age_step_range": [
+    0.027,
+    0.035
+   ],
+   "market_cell_basis": "Maryland Insurance Administration, Medicare Supplement premiums as of 2026-07-01: Plan N / Plan G at 65 across five carriers 0.65-0.90; HDG / G 0.18 (one carrier); Plan G age 65 to 85 premium steps 2.7%-3.5% a year. A cell priced outside these is flagged REVIEW (competitiveness).",
+   "portfolio_risk_check": "The risk target is also measured on the whole model-point portfolio (Monte Carlo per cell with common random numbers, mix-weighted), at current and at recommended cell prices."
+  },
+  "DENTAL_VISION": {
+   "lever": "annual_premium_year1",
+   "lever_label": "Year-1 premium per policy",
+   "min_pv_loss_ratio": null,
+   "min_pv_loss_ratio_basis": "No federal minimum loss ratio for individual excepted-benefit dental; rates are filed with and reviewed by the state (not excessive, inadequate or unfairly discriminatory).",
+   "market_reference": 468.0,
+   "market_reference_basis": "Individual dental about $35/month, $39/month with vision (EMI filing): $468/yr. One public filing, low confidence.",
+   "price_response_lapse_multiplier": 1.1,
+   "price_response_basis": "Judgment robustness check: lapse does not respond to price level in the model, so the solve is repeated with lapse 10% higher (relative) to show how much a price-driven lapse response would raise the required premium."
+  },
+  "MEDICAID": {
+   "lever": null,
+   "lever_label": "Capitation is set by the state and certified actuarially sound (42 CFR 438.4, ASOP 49): it is not a pricing lever.",
+   "min_mlr": 0.85,
+   "min_mlr_basis": "42 CFR 438.8: 85% minimum MLR; the plan remits below the floor (modelled), which caps the upside.",
+   "levers": {
+    "medical_cost_ratio_year1": {
+     "label": "Starting medical cost ratio (medical management)",
+     "how": "set",
+     "bracket": [
+      0.7,
+      0.95
+     ],
+     "public_range": [
+      0.871,
+      0.906
+     ],
+     "public_basis": "Milliman Medicaid MCO MLR 87.1% (2023) to 90.6% (2024), compared with the PV MLR the required starting cost ratio produces",
+     "compare": "pv_mlr"
+    },
+    "admin_pmpm_year1": {
+     "label": "Admin cost PMPM, year 1",
+     "how": "set",
+     "bracket": [
+      0.0,
+      80.0
+     ],
+     "public_range": [
+      39.3,
+      46.41
+     ],
+     "public_basis": "Industry admin 7.7% of revenue net of taxes (x $510 = $39.30); Medicaid-focused median $46.41 PMPM"
+    }
+   }
+  }
+ }
+}

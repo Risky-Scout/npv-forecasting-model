@@ -1,0 +1,12 @@
+# Libraries for the Databricks job tasks. Same pinned versions as requirements.txt EXCEPT pyspark,
+# which the Databricks Runtime provides (installing PyPI pyspark over the runtime's Spark breaks the
+# cluster). Confirm each pin is compatible with the approved runtime's Python before the first run;
+# packages the runtime already ships at a compatible version can be dropped.
+numpy==2.5.3
+pandas==3.0.5
+scipy==1.18.1
+statsmodels==0.15.0
+duckdb==2.0.0
+matplotlib==3.11.2
+openpyxl==3.1.5
+pyarrow==26.0.0

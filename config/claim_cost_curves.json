@@ -1,0 +1,31 @@
+{
+  "_readme": "Claim-cost curves of the EXISTING book: used to normalize Med Supp experience before fitting trend (02_claims_trend_forecast.py) and, from v4.1, to project the existing book in the in-force forecast (09; age slope, selection and plan relativities incl. closed Plan F). New-business pricing (04) uses the public basis in npv_assumptions.json instead. Normalizing removes aging, underwriting-selection wear-off and plan mix, so the fitted trend is a pure cost trend and the NPV engine can apply aging and selection explicitly without double counting. These values are the synthetic book's generating factors (known here only because the data is simulated). In production they are replaced by Humana's own Med Supp age/sex/duration/plan claim-cost curves from the morbidity study, owned by Med Supp pricing. v4 adds DENTAL_VISION: experience normalized for the year-1 pent-up load and product mix before fitting trend. Without it the D&V trend fit is biased low whenever the share of year-1 exposure falls (a block whose new sales are flat while it matures): the v4 seed study (docs/validation) measured the raw fit at 2.1% on average against a true 3.5%.",
+  "source": "Synthetic book generating factors (example). Production: Humana Med Supp morbidity study.",
+  "MEDSUPP": {
+    "base_age": 65,
+    "claim_age_slope": 0.04,
+    "selection_factor_by_duration": [
+      0.78,
+      0.9,
+      1.0
+    ],
+    "plan_relativity": {
+      "G": 1.0,
+      "N": 0.8,
+      "F": 1.12,
+      "HDG": 0.35
+    }
+  },
+  "DENTAL_VISION": {
+    "duration_factor_by_policy_year": [
+      1.28,
+      1.0,
+      1.0
+    ],
+    "plan_relativity": {
+      "DENTAL": 1.0,
+      "DENTAL_VISION": 1.25,
+      "VISION": 0.3
+    }
+  }
+}

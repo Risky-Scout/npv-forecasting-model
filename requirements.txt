@@ -1,0 +1,13 @@
+# Exact versions used to produce every figure in the deck, the document and output/results.json.
+# Requires Python 3.12 or newer (numpy 2.5 does not support Python 3.11); built and verified on Python 3.13.
+# Other versions run fine, but random-number draws (backtest) and optimizer results (SARIMA) can differ slightly.
+numpy==2.5.3
+pandas==3.0.5
+scipy==1.18.1
+statsmodels==0.15.0
+duckdb==2.0.0
+matplotlib==3.11.2
+openpyxl==3.1.5
+pyarrow==26.0.0
+pyspark==4.2.1
+pytest==9.1.1

@@ -1,0 +1,16 @@
+{
+  "_readme": "Run-level settings for one valuation cycle. mode = 'synthetic' generates the practice book and validates the model; mode = 'production' reads source extracts through config/source_mapping.json (the synthetic generators and the synthetic-only validation steps are skipped) and refuses to run on an assumption set that is not approved in config/assumption_approvals.json. In production these values come from the scheduler (Databricks Workflow job parameters).",
+  "mode": "synthetic",
+  "run_id": "SYN-2026-03",
+  "run_date": "2026-03-05",
+  "paid_through": "2026-02",
+  "experience_start": "2022-01",
+  "experience_end": "2025-12",
+  "lines_of_business": [
+    "MEDSUPP",
+    "DENTAL_VISION",
+    "MEDICAID"
+  ],
+  "source_mapping": "config/source_mapping.json",
+  "assumption_file": "code/python/npv_assumptions.json"
+}

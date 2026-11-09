@@ -1,0 +1,12 @@
+{
+  "_readme": "Parameters the SQL kit, the assumption governance step and the Databricks notebook share, so each value lives in one place. 01_run_sql_kit.py renders them into the SQL (with the paid-through month from run_config.json) and stops if any placeholder is left unfilled. Pooling points cap large claims in the experience; the expected excess over them is reported as a pooling charge in output/assumptions/assumption_indications.csv. The A/E expected basis is deliberately simple for the synthetic book; in production it is replaced by the approved assumption basis for the monitoring period (owner: forecasting actuary).",
+  "pooling_points": {"MEDSUPP": 50000.0, "DENTAL_VISION": 10000.0, "MEDICAID": 250000.0},
+  "ae_expected_basis": {
+    "base_year": 2022,
+    "lines": {
+      "MEDSUPP":       {"claims_pmpm_base_year": 140.0, "annual_trend": 0.085, "monthly_termination": 0.0105},
+      "DENTAL_VISION": {"claims_pmpm_base_year": 32.5,  "annual_trend": 0.030, "monthly_termination": 0.0245},
+      "MEDICAID":      {"claims_pmpm_base_year": 410.0, "annual_trend": 0.045, "monthly_termination": 0.0240}
+    }
+  }
+}

@@ -1,0 +1,1724 @@
+{
+ "_readme": "Assumption basis register (v4.2). One entry per assumption in code/python/npv_assumptions.json (a key ending in * covers the whole block; its value is the block without documentation strings). status: P = public source, S = statute / regulation, D = derived for internal consistency, J = judgment (needs a sensitivity range), E = company experience (none shipped), M = model setting. Policy: the synthetic book is not relevant experience for a Humana block (ASOP 25 \u00a73.3), so no credibility is given to its experience. synthetic_link discloses the exceptions: 'derived' = a distribution input read off the synthetic book (sales mix, category shares, Medicaid cell mix); 'equals_generator' = the value equals the synthetic generator's own and is retained because the cited public figure supports it, so the source is a reasonableness check rather than the derivation. tests/test_v4_model.py fails if any assumption is missing here, if a value differs from the documented one, if a P/S entry has no source, or if a J entry has no sensitivity range. docs/ASSUMPTION_BASIS.md is generated from this file.",
+ "entries": [
+  {
+   "key": "global.discount_rate",
+   "value": 0.085,
+   "status": "P",
+   "basis": "Hurdle rate = cost of equity for a health insurer (DE NPV is to equity): Damodaran 7.84% at a lower risk-free rate; +0.7 pt for the 10-yr Treasury now 4.90%.",
+   "sources": [
+    {
+     "title": "Damodaran, cost of capital by industry (Jan 2026)",
+     "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/wacc.html",
+     "date": "2026-01",
+     "figure": "Healthcare Support Services cost of equity 7.84%; total market 8.02%"
+    },
+    {
+     "title": "US 10-year Treasury yield",
+     "url": "https://tradingeconomics.com/united-states/government-bond-yield",
+     "date": "2026-11-04",
+     "figure": "4.90%"
+    }
+   ],
+   "asop": [
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "7.0%-10.0%"
+  },
+  {
+   "key": "global.expense_inflation",
+   "value": 0.03,
+   "status": "P",
+   "basis": "Per-policy expense growth: CBO PCE inflation 2.1-2.7%, rounded up because admin cost is mostly wages (ECI not retrieved).",
+   "sources": [
+    {
+     "title": "CBO Budget and Economic Outlook (Jan 2026)",
+     "url": "https://www.cbo.gov/publication/62005",
+     "date": "2026-01",
+     "figure": "PCE inflation 2.7% (2026) to 2.1% (2028)"
+    }
+   ],
+   "asop": [
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "2.5%-4.0%"
+  },
+  {
+   "key": "global.model_version",
+   "value": "4.2.0",
+   "status": "M",
+   "basis": "Model version tag (approvals are tied to it).",
+   "sources": [],
+   "asop": [],
+   "sensitivity": null
+  },
+  {
+   "key": "global.features*",
+   "value": {
+    "antiselective_shock_lapse": true,
+    "dynamic_shock_lapse": true,
+    "medicaid_rate_cells": true,
+    "correlated_monte_carlo": true,
+    "medicaid_contract_terms": true,
+    "dv_benefit_categories": true,
+    "mc_process_risk": true,
+    "mc_management_response": true
+   },
+   "status": "M",
+   "basis": "Model mechanics switches, not assumptions; each documented in MODEL_DOCUMENTATION.md.",
+   "sources": [],
+   "asop": [],
+   "sensitivity": null
+  },
+  {
+   "key": "global.profit_test.federal_income_tax_rate",
+   "value": 0.21,
+   "status": "S",
+   "basis": "US corporate rate.",
+   "sources": [
+    {
+     "title": "IRC \u00a711(b)",
+     "url": "https://uscode.house.gov/us/usc/119-136/t26/s11/",
+     "date": "current",
+     "figure": "21 percent of taxable income"
+    }
+   ],
+   "asop": [],
+   "sensitivity": null
+  },
+  {
+   "key": "global.profit_test.dac_tax_rate_by_line*",
+   "value": {
+    "MEDSUPP": 0.092,
+    "DENTAL_VISION": 0.0,
+    "MEDICAID": 0.0
+   },
+   "status": "S",
+   "basis": "IRC \u00a7848: Med Supp (guaranteed-renewable A&H, other specified contracts) 9.2% of net premiums, amortized over 180 months; D&V (excepted-benefit dental, treated as cancellable) and Medicaid capitation 0. Classification to be confirmed by Corporate Tax: individual dental is often guaranteed renewable, which would make D&V 9.2% too (swept). Simplifications: the \u00a7848(c)(2) general-deductions cap is not applied and the tax year is the policy year.",
+   "sources": [
+    {
+     "title": "IRC \u00a7848 (specified policy acquisition expenses)",
+     "url": "https://legalfix.com/uscode/text/26/848",
+     "date": "current",
+     "figure": "9.2% of net premiums for other specified contracts; amortized over 180 months"
+    }
+   ],
+   "asop": [
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "D&V 0% / 9.2% (swept)"
+  },
+  {
+   "key": "global.profit_test.investment_earned_rate",
+   "value": 0.04,
+   "status": "P",
+   "basis": "Health industry fixed-income book yield 4.18%; short-duration claim reserves earn less, so 4.0%.",
+   "sources": [
+    {
+     "title": "NEAM: 2025 health industry investment highlights",
+     "url": "https://insuranceaum.com/2025-health-industry-investment-highlights-net-investment-income-fell-despite-higher-book-yields",
+     "date": "2026-08",
+     "figure": "health industry fixed-income book yield 4.18% (2025)"
+    }
+   ],
+   "asop": [
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "3.5%-4.9%"
+  },
+  {
+   "key": "MEDSUPP.projection_years",
+   "value": 20,
+   "status": "M",
+   "basis": "20 years captures nearly all value of an issue-age-65 cohort (persistency below 10% by year 20).",
+   "sources": [],
+   "asop": [],
+   "sensitivity": null
+  },
+  {
+   "key": "MEDSUPP.cohort_size",
+   "value": 1000,
+   "status": "M",
+   "basis": "Results per 1,000 policies.",
+   "sources": [],
+   "asop": [],
+   "sensitivity": null
+  },
+  {
+   "key": "MEDSUPP.issue_age",
+   "value": 65,
+   "status": "P",
+   "basis": "Most Med Supp is sold at 65 in the open-enrollment window; Plan G dominates new sales (Gen Re: 68% of new lives).",
+   "sources": [
+    {
+     "title": "Gen Re U.S. Medicare Supplement Survey (2024 data)",
+     "url": "https://www.genre.com/content/dam/generalreinsuranceprogram/documents/surveylhmedsupp25-en.pdf",
+     "date": "2025",
+     "figure": "open-block lapse incl. mortality avg 11% (4-21%); first-year commission to writing agent avg 19% (9-29%); open-block loss ratio 87.1%"
+    },
+    {
+     "title": "NAIC MACRA producer bulletin (Plans C/F)",
+     "url": "https://content.naic.org/sites/default/files/inline-files/cmte_b_senior_issues_related_macra_producer_bulletin_0.pdf",
+     "date": "2019",
+     "figure": "newly eligible on or after 2020-01-01 cannot buy Plans C or F"
+    }
+   ],
+   "asop": [
+    "ASOP 12 (risk classification: age, plan, underwriting class)"
+   ],
+   "sensitivity": null
+  },
+  {
+   "key": "MEDSUPP.annual_premium_year1",
+   "value": 1980.0,
+   "status": "P",
+   "basis": "Plan G age-65 underwritten new-issue premium; below the all-ages in-force average $2,323 (KFF), consistent with a young, select entrant.",
+   "sources": [
+    {
+     "title": "KFF: Key Facts About Medigap Enrollment and Premiums",
+     "url": "https://www.kff.org/medicare/issue-brief/key-facts-about-medigap-enrollment-and-premiums-for-medicare-beneficiaries/",
+     "date": "2026-10-13",
+     "figure": "2025 average Plan G premium $194/month ($2,323/yr), all ages; 4 states incl. GA prohibit attained-age rating"
+    }
+   ],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)",
+    "ASOP 23 (data quality; disclose limitations of public data)"
+   ],
+   "sensitivity": "$1,750-$2,300",
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "MEDSUPP.premium_age_step",
+   "value": 0.03,
+   "status": "P",
+   "basis": "Attained-age premium step: Maryland 2026 Plan G rates from 65 to 85 rise 2.7-3.5%/yr across five carriers. GA, AZ, FL, MO prohibit attained-age rating: issue-age and community variants in medsupp_rating_bases.csv.",
+   "sources": [
+    {
+     "title": "Maryland Insurance Administration: Medicare Supplement Monthly Premiums as of July 1, 2026",
+     "url": "https://insurance.maryland.gov/consumer/documents/publications/medicare-supplement-rate-guide.pdf",
+     "date": "2026-07-01",
+     "figure": "Plan G age 65 / 85 (5 attained-age carriers): $300/$515, $253/$500, $233/$440, $240/$427, $230/$391 -> 2.7-3.5%/yr; Plan N/G at 65: 0.65, 0.73, 0.90, 0.85, 0.72 (mean 0.77); HDG/G 0.18 (one carrier)"
+    },
+    {
+     "title": "KFF: Key Facts About Medigap Enrollment and Premiums",
+     "url": "https://www.kff.org/medicare/issue-brief/key-facts-about-medigap-enrollment-and-premiums-for-medicare-beneficiaries/",
+     "date": "2026-10-13",
+     "figure": "2025 average Plan G premium $194/month ($2,323/yr), all ages; 4 states incl. GA prohibit attained-age rating"
+    }
+   ],
+   "asop": [
+    "ASOP 12 (risk classification: age, plan, underwriting class)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "2%-4%",
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "MEDSUPP.annual_rate_increase",
+   "value": 0.073,
+   "status": "D",
+   "basis": "Derived for internal consistency: (1 + trend)(1 + claim age slope)/(1 + premium age step) - 1 = 1.065 x 1.038 / 1.03 - 1 = 7.3%, which holds the ultimate loss ratio level. Industry increases of 10.6-11.7% include catch-up of realized trend and are the upside test.",
+   "sources": [
+    {
+     "title": "CSG Actuarial: Medicare Supplement rate increases continue higher trend into 2026",
+     "url": "https://csgactuarial.com/news/average-medicare-supplement-rate-increases-continue-higher-trend-into-2026",
+     "date": "2026-01",
+     "figure": "average Med Supp rate increase 10.6% (2025), 11.7% (2026 YTD)"
+    }
+   ],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "5%-12%"
+  },
+  {
+   "key": "MEDSUPP.annual_claim_cost_year1_ultimate",
+   "value": 1536.0,
+   "status": "P",
+   "basis": "Ultimate year-1 loss ratio 77.6% for a new issue; market loss ratio 84.7% (NAIC) includes older, deteriorated blocks; Gen Re open blocks 87.1% (66-102%).",
+   "sources": [
+    {
+     "title": "NAIC 2024 Medicare Supplement Loss Ratio Report",
+     "url": "https://content.naic.org/sites/default/files/publication-med-bb-medicare-loss-report.pdf",
+     "date": "2025",
+     "figure": "individual loss ratio 84.66% (earned premium $27.74B, incurred $23.49B)"
+    },
+    {
+     "title": "Gen Re U.S. Medicare Supplement Survey (2024 data)",
+     "url": "https://www.genre.com/content/dam/generalreinsuranceprogram/documents/surveylhmedsupp25-en.pdf",
+     "date": "2025",
+     "figure": "open-block lapse incl. mortality avg 11% (4-21%); first-year commission to writing agent avg 19% (9-29%); open-block loss ratio 87.1%"
+    }
+   ],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)",
+    "ASOP 25 \u00a73.3 (relevant experience must be predictive; otherwise not used)"
+   ],
+   "sensitivity": "loss ratio 75%-88%",
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "MEDSUPP.claim_age_slope",
+   "value": 0.038,
+   "status": "P",
+   "basis": "Plan G claim cost by age: Milliman 1.45 at 75 vs 65 (3.8%/yr); KFF Part B per-capita by age ~4.0%/yr.",
+   "sources": [
+    {
+     "title": "Milliman (Clark): Medicare Supplement: Climbing a slippery slope?",
+     "url": "https://www.milliman.com/en/insight/medicare-supplement-climbing-a-slippery-slope",
+     "date": "2019-07-17",
+     "figure": "Plan G claim cost relative to age 65: 1.20 at 70, 1.45 at 75 (~3.8%/yr)"
+    },
+    {
+     "title": "KFF: The Rising Cost of Living Longer (2015, 2011 data)",
+     "url": "https://www.kff.org/788a7bd",
+     "date": "2015",
+     "figure": "Part B per-capita spending $1,368 at 66, $2,670 at 83 (~4.0%/yr)"
+    }
+   ],
+   "asop": [
+    "ASOP 12 (risk classification: age, plan, underwriting class)",
+    "ASOP 25 \u00a73.3 (relevant experience must be predictive; otherwise not used)"
+   ],
+   "sensitivity": "3%-5%"
+  },
+  {
+   "key": "MEDSUPP.claim_trend",
+   "value": 0.065,
+   "status": "P",
+   "basis": "Pure cost trend = Part B per-enrollee prices x volume/intensity: 1.020 x 1.044 - 1 = 6.49%. Synthetic experience is not relevant experience for a Humana block (ASOP 25 \u00a73.3), so credibility on it is 0; its indication is a dispositioned REVIEW item.",
+   "sources": [
+    {
+     "title": "2026 Medicare Trustees Report, Table II.D1 (CMS OACT)",
+     "url": "https://www.cms.gov/oact/tr/2026",
+     "date": "2026-06-09",
+     "figure": "Part B 2026-35: prices 2.0%, volume and intensity 4.4%, beneficiaries 1.7%, total 8.5%"
+    },
+    {
+     "title": "CSG Actuarial: Medicare Supplement rate increases continue higher trend into 2026",
+     "url": "https://csgactuarial.com/news/average-medicare-supplement-rate-increases-continue-higher-trend-into-2026",
+     "date": "2026-01",
+     "figure": "average Med Supp rate increase 10.6% (2025), 11.7% (2026 YTD)"
+    }
+   ],
+   "asop": [
+    "ASOP 25 \u00a73.3 (relevant experience must be predictive; otherwise not used)",
+    "ASOP 8 \u00a73.4.6 (consider historical trends; they may not be the best predictor)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "5.0%-8.0% (benchmark SD 1.5 pt)"
+  },
+  {
+   "key": "MEDSUPP.selection_factors",
+   "value": [
+    0.78,
+    0.9,
+    1.0
+   ],
+   "status": "J",
+   "basis": "Underwriting wear-off; no Med Supp public table. Major-medical proxy shows year 1 ~0.80 of year 2 and longer wear-off.",
+   "sources": [
+    {
+     "title": "SOA / Milliman Individual Health Durational Study (Wachenheim)",
+     "url": "https://www.soa.org/Files/Research/Projects/IH-Durational-Study_Final-1006.pdf",
+     "date": "2006-10",
+     "figure": "major medical claims relative to year 2: yr1 0.801, yr3 1.044 (proxy; not Med Supp)"
+    }
+   ],
+   "asop": [
+    "ASOP 12 (risk classification: age, plan, underwriting class)",
+    "ASOP 25 \u00a73.3 / \u00a73.4 (no relevant experience: professional judgment; credibility not always precise)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "year 1 0.70-0.85; ultimate by year 3-5",
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "MEDSUPP.lapse_by_duration",
+   "value": [
+    0.14,
+    0.11,
+    0.085
+   ],
+   "status": "P",
+   "basis": "Consistent with Gen Re open-block lapse 11% average incl. mortality (range 4-21%): ultimate 8.5% + ~1.2% mortality ~ 10%. Also the synthetic book's experience (not relied on).",
+   "sources": [
+    {
+     "title": "Gen Re U.S. Medicare Supplement Survey (2024 data)",
+     "url": "https://www.genre.com/content/dam/generalreinsuranceprogram/documents/surveylhmedsupp25-en.pdf",
+     "date": "2025",
+     "figure": "open-block lapse incl. mortality avg 11% (4-21%); first-year commission to writing agent avg 19% (9-29%); open-block loss ratio 87.1%"
+    }
+   ],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)",
+    "ASOP 25 \u00a73.3 (relevant experience must be predictive; otherwise not used)"
+   ],
+   "sensitivity": "x0.8-x1.2 (tornado)",
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "MEDSUPP.shock_lapse_add_from_year2",
+   "value": 0.035,
+   "status": "J",
+   "basis": "Extra lapse at the anniversary rate increase; no public magnitude.",
+   "sources": [],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "2%-6%",
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "MEDSUPP.mortality_q65",
+   "value": 0.0108,
+   "status": "P",
+   "basis": "SSA 2022 period unisex q65 0.01446 x 75% underwriting selection (judgment for an underwritten insured population) = 0.0108.",
+   "sources": [
+    {
+     "title": "SSA period life table 2022 (2025 Trustees Report)",
+     "url": "https://www.ssa.gov/oact/STATS/table4c6_2022_TR2025.html",
+     "date": "2025",
+     "figure": "q65 M 0.017897 F 0.011018; q85 M 0.100525 F 0.076841 (unisex q65 0.01446, q85/q65 = 6.13 -> 9.1%/yr)"
+    }
+   ],
+   "asop": [
+    "ASOP 25 \u00a73.3 / \u00a73.4 (no relevant experience: professional judgment; credibility not always precise)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "60%-90% of SSA"
+  },
+  {
+   "key": "MEDSUPP.mortality_growth",
+   "value": 0.091,
+   "status": "P",
+   "basis": "Gompertz growth fitted to SSA unisex q65-q85: ln(6.13)/20 = 9.1%.",
+   "sources": [
+    {
+     "title": "SSA period life table 2022 (2025 Trustees Report)",
+     "url": "https://www.ssa.gov/oact/STATS/table4c6_2022_TR2025.html",
+     "date": "2025",
+     "figure": "q65 M 0.017897 F 0.011018; q85 M 0.100525 F 0.076841 (unisex q65 0.01446, q85/q65 = 6.13 -> 9.1%/yr)"
+    }
+   ],
+   "asop": [
+    "ASOP 25 \u00a73.3 (relevant experience must be predictive; otherwise not used)"
+   ],
+   "sensitivity": null
+  },
+  {
+   "key": "MEDSUPP.first_year_commission",
+   "value": 0.2,
+   "status": "S",
+   "basis": "Compensation rule: first year no more than 200% of renewal; 20% = 2 x 10%. Gen Re writing-agent first-year average 19%.",
+   "sources": [
+    {
+     "title": "14VAC5-170-140 (NAIC Medicare Supplement Model Regulation, compensation)",
+     "url": "https://law.lis.virginia.gov/admincode/title14/agency5/chapter170/section140/",
+     "date": "current",
+     "figure": "first-year compensation no more than 200% of second-year compensation"
+    },
+    {
+     "title": "Gen Re U.S. Medicare Supplement Survey (2024 data)",
+     "url": "https://www.genre.com/content/dam/generalreinsuranceprogram/documents/surveylhmedsupp25-en.pdf",
+     "date": "2025",
+     "figure": "open-block lapse incl. mortality avg 11% (4-21%); first-year commission to writing agent avg 19% (9-29%); open-block loss ratio 87.1%"
+    }
+   ],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)"
+   ],
+   "sensitivity": null
+  },
+  {
+   "key": "MEDSUPP.renewal_commission",
+   "value": 0.1,
+   "status": "P",
+   "basis": "Typical renewal 10% for years 2-6 (e.g. BCBSIL schedule); level for at least 5 years per the model regulation.",
+   "sources": [
+    {
+     "title": "14VAC5-170-140 (NAIC Medicare Supplement Model Regulation, compensation)",
+     "url": "https://law.lis.virginia.gov/admincode/title14/agency5/chapter170/section140/",
+     "date": "current",
+     "figure": "first-year compensation no more than 200% of second-year compensation"
+    }
+   ],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)"
+   ],
+   "sensitivity": null
+  },
+  {
+   "key": "MEDSUPP.premium_tax",
+   "value": 0.0225,
+   "status": "P",
+   "basis": "GA 2.25%, LA ~2.25% (illustrative state footprint); national range 1.75%-2.35%.",
+   "sources": [
+    {
+     "title": "NAIC premium tax rate by line chart",
+     "url": "https://content.naic.org/sites/default/files/model-law-chart-zz-1-premium-tax-rate-by-line.pdf",
+     "date": "2025-12",
+     "figure": "GA 2.25%; LA ~2.25%; TX/FL/NY 1.75%; CA 2.35%"
+    }
+   ],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)"
+   ],
+   "sensitivity": "1.75%-2.35%"
+  },
+  {
+   "key": "MEDSUPP.acquisition_cost_per_policy",
+   "value": 250.0,
+   "status": "J",
+   "basis": "Underwriting, issue and marketing per policy; no public basis.",
+   "sources": [],
+   "asop": [
+    "ASOP 41 (disclose judgment assumptions and reliance on others)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "+/-30%"
+  },
+  {
+   "key": "MEDSUPP.maintenance_cost_per_policy",
+   "value": 95.0,
+   "status": "J",
+   "basis": "Per-policy admin; no public basis.",
+   "sources": [],
+   "asop": [
+    "ASOP 41 (disclose judgment assumptions and reliance on others)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "+/-30%"
+  },
+  {
+   "key": "MEDSUPP.antiselection.shopper_share_at_issue",
+   "value": 0.5,
+   "status": "J",
+   "basis": "Anti-selective lapse is supported in direction only; no published magnitude.",
+   "sources": [
+    {
+     "title": "SOA Health Watch, Wei (anti-selective lapse)",
+     "url": "https://www.soa.org/4937bb/globalassets/assets/library/newsletters/health-watch-newsletter/2010/february/hsn-2010-iss63-wei.pdf",
+     "date": "2010-02",
+     "figure": "healthy lives lapse at a higher rate than impaired lives (direction only)"
+    }
+   ],
+   "asop": [
+    "ASOP 12 (risk classification: age, plan, underwriting class)",
+    "ASOP 25 \u00a73.3 / \u00a73.4 (no relevant experience: professional judgment; credibility not always precise)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "30%-70%"
+  },
+  {
+   "key": "MEDSUPP.antiselection.shopper_relative_claim_cost",
+   "value": 0.85,
+   "status": "J",
+   "basis": "As above.",
+   "sources": [
+    {
+     "title": "SOA Health Watch, Wei (anti-selective lapse)",
+     "url": "https://www.soa.org/4937bb/globalassets/assets/library/newsletters/health-watch-newsletter/2010/february/hsn-2010-iss63-wei.pdf",
+     "date": "2010-02",
+     "figure": "healthy lives lapse at a higher rate than impaired lives (direction only)"
+    }
+   ],
+   "asop": [
+    "ASOP 12 (risk classification: age, plan, underwriting class)",
+    "ASOP 25 \u00a73.3 / \u00a73.4 (no relevant experience: professional judgment; credibility not always precise)"
+   ],
+   "sensitivity": "0.75-0.95 (tornado)"
+  },
+  {
+   "key": "MEDSUPP.antiselection.shopper_shock_lapse_propensity",
+   "value": 4.0,
+   "status": "J",
+   "basis": "As above.",
+   "sources": [
+    {
+     "title": "SOA Health Watch, Wei (anti-selective lapse)",
+     "url": "https://www.soa.org/4937bb/globalassets/assets/library/newsletters/health-watch-newsletter/2010/february/hsn-2010-iss63-wei.pdf",
+     "date": "2010-02",
+     "figure": "healthy lives lapse at a higher rate than impaired lives (direction only)"
+    }
+   ],
+   "asop": [
+    "ASOP 12 (risk classification: age, plan, underwriting class)",
+    "ASOP 25 \u00a73.3 / \u00a73.4 (no relevant experience: professional judgment; credibility not always precise)"
+   ],
+   "sensitivity": "2x-6x"
+  },
+  {
+   "key": "MEDSUPP.dynamic_shock_lapse.reference_rate_increase",
+   "value": 0.073,
+   "status": "D",
+   "basis": "Equals the filed rate-increase assumption, so the base shock is unchanged at the base increase.",
+   "sources": [],
+   "asop": [
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": null
+  },
+  {
+   "key": "MEDSUPP.dynamic_shock_lapse.shock_lapse_per_unit_rate_increase",
+   "value": 0.5,
+   "status": "J",
+   "basis": "Shock lapse response to the size of the increase; no public basis.",
+   "sources": [],
+   "asop": [
+    "ASOP 41 (disclose judgment assumptions and reliance on others)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "0.25-1.0"
+  },
+  {
+   "key": "MEDSUPP.claim_payment_pattern",
+   "value": [
+    0.33,
+    0.36,
+    0.15,
+    0.08,
+    0.04,
+    0.02,
+    0.01,
+    0.005,
+    0.005
+   ],
+   "status": "J",
+   "basis": "Medical-style lag (84% paid by month 2); public figures are illustrative only (~85/95/98% by 1/2/3 months). Production: Humana completion study.",
+   "sources": [],
+   "asop": [
+    "ASOP 23 (data quality; disclose limitations of public data)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "+/-1 month",
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "MEDSUPP.required_capital_pct_of_annual_claims",
+   "value": 0.1,
+   "status": "J",
+   "basis": "NAIC Health RBC underwriting-risk factors at a ~400% RBC target (MCO median 414%); Med Supp factor not retrieved.",
+   "sources": [
+    {
+     "title": "NAIC Health RBC H2 risk factor exhibits",
+     "url": "https://content.naic.org/sites/default/files/inline-files/4.2_H2%20Risk%20Factor%20Summary%20Exhibits_Embed%20%28FINAL%20REV%29_0.pdf",
+     "date": "2025",
+     "figure": "comprehensive medical factor 0.1493 (first $25M), 0.0893 above; proposed Medicaid 0.083-0.148"
+    },
+    {
+     "title": "Milliman: Medicaid managed care financial results 2024 / 2025",
+     "url": "https://www.milliman.com/en/insight/medicaid-managed-care-financial-results-2025",
+     "date": "2026-06-29",
+     "figure": "SAP MLR 90.6% (2024), 87.1% (2023); admin 7.7% net of taxes; taxes/fees 2.3%; underwriting result -0.6% (2024), -0.1% (2025); RBC median 414%"
+    }
+   ],
+   "asop": [
+    "ASOP 58 \u00a73.8 (ERM stress testing; replaces repealed ASOPs 46/47)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "6%-15%"
+  },
+  {
+   "key": "MEDSUPP.model_points.bands",
+   "value": [
+    {
+     "band": "65",
+     "issue_age": 65.0
+    },
+    {
+     "band": "66-69",
+     "issue_age": 67.46
+    },
+    {
+     "band": "70-74",
+     "issue_age": 71.97
+    },
+    {
+     "band": "75+",
+     "issue_age": 76.95
+    }
+   ],
+   "status": "J",
+   "basis": "Issue-age bands and their mean ages, taken from the synthetic book's 2024-25 new issues (a sales-mix placeholder for the Humana sales plan); Plan F excluded under MACRA. No effect on the headline cell.",
+   "sources": [
+    {
+     "title": "NAIC MACRA producer bulletin (Plans C/F)",
+     "url": "https://content.naic.org/sites/default/files/inline-files/cmte_b_senior_issues_related_macra_producer_bulletin_0.pdf",
+     "date": "2019",
+     "figure": "newly eligible on or after 2020-01-01 cannot buy Plans C or F"
+    }
+   ],
+   "asop": [
+    "ASOP 12 (risk classification: age, plan, underwriting class)"
+   ],
+   "sensitivity": "per-cell results in medsupp_model_points.csv: any mix is a weighted sum",
+   "synthetic_link": "derived"
+  },
+  {
+   "key": "MEDSUPP.model_points.plans*",
+   "value": {
+    "G": {
+     "premium_relativity": 1.0,
+     "claim_relativity": 1.0
+    },
+    "N": {
+     "premium_relativity": 0.77,
+     "claim_relativity": 0.77
+    },
+    "HDG": {
+     "premium_relativity": 0.18,
+     "claim_relativity": 0.18
+    }
+   },
+   "status": "P",
+   "basis": "Premium relativities from Maryland 2026 rates: Plan N 0.77 (mean of five carriers, 0.65-0.90), HDG 0.18 (one carrier, low confidence). Claim relativities set equal to the premium relativities (judgment: same loss ratio by plan).",
+   "sources": [
+    {
+     "title": "Maryland Insurance Administration: Medicare Supplement Monthly Premiums as of July 1, 2026",
+     "url": "https://insurance.maryland.gov/consumer/documents/publications/medicare-supplement-rate-guide.pdf",
+     "date": "2026-07-01",
+     "figure": "Plan G age 65 / 85 (5 attained-age carriers): $300/$515, $253/$500, $233/$440, $240/$427, $230/$391 -> 2.7-3.5%/yr; Plan N/G at 65: 0.65, 0.73, 0.90, 0.85, 0.72 (mean 0.77); HDG/G 0.18 (one carrier)"
+    }
+   ],
+   "asop": [
+    "ASOP 12 (risk classification: age, plan, underwriting class)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "N 0.65-0.90; HDG 0.15-0.35"
+  },
+  {
+   "key": "MEDSUPP.model_points.mix*",
+   "value": {
+    "65": {
+     "G": 0.2711,
+     "N": 0.0952,
+     "HDG": 0.0335
+    },
+    "66-69": {
+     "G": 0.1291,
+     "N": 0.0359,
+     "HDG": 0.0173
+    },
+    "70-74": {
+     "G": 0.1399,
+     "N": 0.0513,
+     "HDG": 0.0224
+    },
+    "75+": {
+     "G": 0.1322,
+     "N": 0.054,
+     "HDG": 0.0181
+    }
+   },
+   "status": "J",
+   "basis": "New-business mix by band x plan taken from the synthetic book (a sales-mix placeholder for the Humana sales plan); its Plan G share, 67%, is consistent with Gen Re (68% of new lives). Plan relativities are public (Maryland 2026). No effect on the headline cell.",
+   "sources": [
+    {
+     "title": "Gen Re U.S. Medicare Supplement Survey (2024 data)",
+     "url": "https://www.genre.com/content/dam/generalreinsuranceprogram/documents/surveylhmedsupp25-en.pdf",
+     "date": "2025",
+     "figure": "open-block lapse incl. mortality avg 11% (4-21%); first-year commission to writing agent avg 19% (9-29%); open-block loss ratio 87.1%"
+    }
+   ],
+   "asop": [
+    "ASOP 12 (risk classification: age, plan, underwriting class)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "per-cell results in medsupp_model_points.csv: any mix is a weighted sum",
+   "synthetic_link": "derived"
+  },
+  {
+   "key": "DENTAL_VISION.projection_years",
+   "value": 10,
+   "status": "M",
+   "basis": "10 years: high lapse leaves little in force after year 10.",
+   "sources": [],
+   "asop": [],
+   "sensitivity": null
+  },
+  {
+   "key": "DENTAL_VISION.cohort_size",
+   "value": 1000,
+   "status": "M",
+   "basis": "Results per 1,000 policies.",
+   "sources": [],
+   "asop": [],
+   "sensitivity": null
+  },
+  {
+   "key": "DENTAL_VISION.annual_premium_year1",
+   "value": 468.0,
+   "status": "P",
+   "basis": "Individual dental ~$35/month (EMI filing); $39 incl. vision.",
+   "sources": [
+    {
+     "title": "EMI Health 2025 Premier PPO Low (individual dental filing)",
+     "url": "https://emihealth.com/pdf/plans/individual/Ut_Premier_PPO_Low.pdf",
+     "date": "2025",
+     "figure": "$35/month individual; waiting 6 months basic, 12 months major"
+    }
+   ],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)"
+   ],
+   "sensitivity": null,
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "DENTAL_VISION.annual_rate_increase",
+   "value": 0.03,
+   "status": "P",
+   "basis": "3%: filed dental trend 3% (SLICA 2013 memo); a 2026 individual dental filing (Anthem CA) took no increase. Low confidence.",
+   "sources": [
+    {
+     "title": "DC DISB public dental actuarial memoranda (Security Life of America; Starmount)",
+     "url": "https://disb.dc.gov/sites/default/files/dc/sites/disb/publication/attachments/SLAI-128954476.pdf",
+     "date": "2013",
+     "figure": "lapse rate of 30% per year; trend 3% per year; commission 20.0%"
+    }
+   ],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "0%-5%",
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "DENTAL_VISION.annual_claim_cost_year1_ultimate",
+   "value": 330.0,
+   "status": "P",
+   "basis": "Ultimate loss ratio 70.5%; individual dental ~68%, group 79% (Milliman for NADP).",
+   "sources": [
+    {
+     "title": "Milliman for NADP: Minimum Dental Loss Ratios",
+     "url": "https://www.nadp.org/wp-content/uploads/2022/09/massachusetts-dlr-report-final.pdf",
+     "date": "2022-06",
+     "figure": "individual/small group dental loss ratio ~68.2%; national group 79.1%; sample carrier 23% admin"
+    }
+   ],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)",
+    "ASOP 25 \u00a73.3 (relevant experience must be predictive; otherwise not used)"
+   ],
+   "sensitivity": "loss ratio 60%-80%"
+  },
+  {
+   "key": "DENTAL_VISION.claim_trend",
+   "value": 0.035,
+   "status": "P",
+   "basis": "Dental benchmark 3.5% (Segal 3.5-4.5%; ADA HPI private dental +2.3% real). Credibility 0 on synthetic experience (ASOP 25 \u00a73.3).",
+   "sources": [
+    {
+     "title": "ADA Health Policy Institute: National Dental Expenditures 2024",
+     "url": "https://ada.org/resources/research/health-policy-institute/dental-care-market/national-dental-expenses",
+     "date": "2026-01",
+     "figure": "dental spending +4% real 2024; private dental insurance +2.3% real"
+    },
+    {
+     "title": "Nevada PEBP plan year 2027 trend (Segal)",
+     "url": "https://www.pebp.nv.gov/siteassets/content/meetings/2026/march/5.-plan-year-2027-trend-and-rate-setting.pdf",
+     "date": "2026-03-19",
+     "figure": "Segal dental benchmark 4.5%; plan adopted 3.5%"
+    }
+   ],
+   "asop": [
+    "ASOP 25 \u00a73.3 (relevant experience must be predictive; otherwise not used)",
+    "ASOP 8 \u00a73.4.6 (consider historical trends; they may not be the best predictor)"
+   ],
+   "sensitivity": "2.5%-4.5%",
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "DENTAL_VISION.first_year_pent_up_factor",
+   "value": 1.28,
+   "status": "J",
+   "basis": "Year-1 demand surge supported in direction (RAND HIE); magnitude judgment.",
+   "sources": [
+    {
+     "title": "Manning et al., JADA 1985 (RAND Health Insurance Experiment, dental)",
+     "url": "https://hcp.hms.harvard.edu/publication/demand-dental-care-evidence-randomized-trial-health-insurance",
+     "date": "1985-06",
+     "figure": "substantial surge in demand in the first year of coverage (direction)"
+    }
+   ],
+   "asop": [
+    "ASOP 25 \u00a73.3 / \u00a73.4 (no relevant experience: professional judgment; credibility not always precise)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "1.10-1.40",
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "DENTAL_VISION.lapse_by_duration",
+   "value": [
+    0.3,
+    0.3,
+    0.3
+   ],
+   "status": "P",
+   "basis": "Flat 30% per year from filed individual dental actuarial memoranda (SLICA 2013: \"lapse rate of 30% per year\"). Low confidence (2013).",
+   "sources": [
+    {
+     "title": "DC DISB public dental actuarial memoranda (Security Life of America; Starmount)",
+     "url": "https://disb.dc.gov/sites/default/files/dc/sites/disb/publication/attachments/SLAI-128954476.pdf",
+     "date": "2013",
+     "figure": "lapse rate of 30% per year; trend 3% per year; commission 20.0%"
+    }
+   ],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)",
+    "ASOP 25 \u00a73.3 (relevant experience must be predictive; otherwise not used)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "+/-10 pts"
+  },
+  {
+   "key": "DENTAL_VISION.first_year_commission",
+   "value": 0.15,
+   "status": "J",
+   "basis": "15%; 2013 dental memoranda show 20% level; kept within total admin ~23% (Milliman for NADP).",
+   "sources": [
+    {
+     "title": "DC DISB public dental actuarial memoranda (Security Life of America; Starmount)",
+     "url": "https://disb.dc.gov/sites/default/files/dc/sites/disb/publication/attachments/SLAI-128954476.pdf",
+     "date": "2013",
+     "figure": "lapse rate of 30% per year; trend 3% per year; commission 20.0%"
+    },
+    {
+     "title": "Milliman for NADP: Minimum Dental Loss Ratios",
+     "url": "https://www.nadp.org/wp-content/uploads/2022/09/massachusetts-dlr-report-final.pdf",
+     "date": "2022-06",
+     "figure": "individual/small group dental loss ratio ~68.2%; national group 79.1%; sample carrier 23% admin"
+    }
+   ],
+   "asop": [
+    "ASOP 41 (disclose judgment assumptions and reliance on others)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "10%-20%"
+  },
+  {
+   "key": "DENTAL_VISION.renewal_commission",
+   "value": 0.08,
+   "status": "J",
+   "basis": "No public basis.",
+   "sources": [],
+   "asop": [
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "5%-10%"
+  },
+  {
+   "key": "DENTAL_VISION.premium_tax",
+   "value": 0.0225,
+   "status": "P",
+   "basis": "GA/LA ~2.25%.",
+   "sources": [
+    {
+     "title": "NAIC premium tax rate by line chart",
+     "url": "https://content.naic.org/sites/default/files/model-law-chart-zz-1-premium-tax-rate-by-line.pdf",
+     "date": "2025-12",
+     "figure": "GA 2.25%; LA ~2.25%; TX/FL/NY 1.75%; CA 2.35%"
+    }
+   ],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)"
+   ],
+   "sensitivity": "1.75%-2.35%"
+  },
+  {
+   "key": "DENTAL_VISION.acquisition_cost_per_policy",
+   "value": 40.0,
+   "status": "J",
+   "basis": "No public basis.",
+   "sources": [],
+   "asop": [
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "+/-30%"
+  },
+  {
+   "key": "DENTAL_VISION.maintenance_cost_per_policy",
+   "value": 50.0,
+   "status": "P",
+   "basis": "Raised from $30 so renewal expense (commission + tax + maintenance ~21%) approaches the ~23% admin ratio of a sample dental carrier (Milliman for NADP).",
+   "sources": [
+    {
+     "title": "Milliman for NADP: Minimum Dental Loss Ratios",
+     "url": "https://www.nadp.org/wp-content/uploads/2022/09/massachusetts-dlr-report-final.pdf",
+     "date": "2022-06",
+     "figure": "individual/small group dental loss ratio ~68.2%; national group 79.1%; sample carrier 23% admin"
+    }
+   ],
+   "asop": [
+    "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "$30-$70"
+  },
+  {
+   "key": "DENTAL_VISION.claim_payment_pattern",
+   "value": [
+    0.33,
+    0.36,
+    0.15,
+    0.08,
+    0.04,
+    0.02,
+    0.01,
+    0.005,
+    0.005
+   ],
+   "status": "J",
+   "basis": "As Med Supp; dental pays faster in practice (conservative).",
+   "sources": [],
+   "asop": [
+    "ASOP 23 (data quality; disclose limitations of public data)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "+/-1 month",
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "DENTAL_VISION.required_capital_pct_of_annual_claims",
+   "value": 0.06,
+   "status": "J",
+   "basis": "Dental RBC factor not retrieved; lower than medical.",
+   "sources": [
+    {
+     "title": "NAIC Health RBC H2 risk factor exhibits",
+     "url": "https://content.naic.org/sites/default/files/inline-files/4.2_H2%20Risk%20Factor%20Summary%20Exhibits_Embed%20%28FINAL%20REV%29_0.pdf",
+     "date": "2025",
+     "figure": "comprehensive medical factor 0.1493 (first $25M), 0.0893 above; proposed Medicaid 0.083-0.148"
+    }
+   ],
+   "asop": [
+    "ASOP 58 \u00a73.8 (ERM stress testing; replaces repealed ASOPs 46/47)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "4%-10%"
+  },
+  {
+   "key": "DENTAL_VISION.benefit_categories*",
+   "value": {
+    "categories": [
+     "PREVENTIVE",
+     "BASIC",
+     "MAJOR",
+     "VISION"
+    ],
+    "cost_share": [
+     0.243,
+     0.252,
+     0.249,
+     0.256
+    ],
+    "trend_add_on": [
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "pent_up_relativity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "waiting_period_months": [
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "status": "J",
+   "basis": "Category shares from the (synthetic) service mix; neutral category trend and pent-up; no waiting periods, matching the product the experience reflects. Market norm is 6/12-month waiting periods on basic/major (EMI); the engine defers a waited category's pent-up demand to the first 12 months after the wait ends (v4.1), so a waiting-period design can be tested as a product option. The shares have NO effect on the base results (categories are neutral); they scale only the waiting-period options (dv_product_options.csv, MAJOR share 24.9%).",
+   "sources": [
+    {
+     "title": "EMI Health 2025 Premier PPO Low (individual dental filing)",
+     "url": "https://emihealth.com/pdf/plans/individual/Ut_Premier_PPO_Low.pdf",
+     "date": "2025",
+     "figure": "$35/month individual; waiting 6 months basic, 12 months major"
+    }
+   ],
+   "asop": [
+    "ASOP 12 (risk classification: age, plan, underwriting class)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "no effect at base; waiting-period options reported with the MAJOR share",
+   "synthetic_link": "derived"
+  },
+  {
+   "key": "MEDICAID.projection_years",
+   "value": 10,
+   "status": "M",
+   "basis": "10 years: two procurement cycles.",
+   "sources": [],
+   "asop": [],
+   "sensitivity": null
+  },
+  {
+   "key": "MEDICAID.contract_term_years",
+   "value": 5,
+   "status": "J",
+   "basis": "Typical 5-year managed care contract; state-specific.",
+   "sources": [],
+   "asop": [
+    "ASOP 49 \u00a72.1 (actuarially sound: reasonable, appropriate, attainable costs)"
+   ],
+   "sensitivity": "3-7 years"
+  },
+  {
+   "key": "MEDICAID.renewal_probability",
+   "value": 0.75,
+   "status": "J",
+   "basis": "Procurement outcome; no public basis.",
+   "sources": [],
+   "asop": [
+    "ASOP 41 (disclose judgment assumptions and reliance on others)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "50%-90% (tornado; consider 0%)"
+  },
+  {
+   "key": "MEDICAID.starting_members",
+   "value": 10000,
+   "status": "J",
+   "basis": "Contract size; depends on auto-assignment.",
+   "sources": [],
+   "asop": [
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "+/-30%"
+  },
+  {
+   "key": "MEDICAID.annual_new_members",
+   "value": 2800,
+   "status": "J",
+   "basis": "Joiner volume; depends on auto-assignment and choice enrollment.",
+   "sources": [],
+   "asop": [
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "+/-30%"
+  },
+  {
+   "key": "MEDICAID.annual_disenrollment",
+   "value": 0.25,
+   "status": "J",
+   "basis": "Judgment anchored on a public figure: MACPAC 21% within 12 months (2018), ~19-21% at this cell mix, raised to 25% for more frequent redeterminations from 2027 (the uplift is judgment, not verified). Swept 20%-30% in the tornado (x0.8 / x1.2).",
+   "sources": [
+    {
+     "title": "MACPAC: An updated look at rates of churn in Medicaid and CHIP",
+     "url": "https://www.macpac.gov/wp-content/uploads/2021/10/An-Updated-Look-at-Rates-of-Churn-and-Continuous-Coverage-in-Medicaid-and-CHIP.pdf",
+     "date": "2021-10",
+     "figure": "21% disenrolled within 12 months (2018): children 19%, MAGI adults 28%, disabled 9%"
+    }
+   ],
+   "asop": [
+    "ASOP 25 \u00a73.3 (relevant experience must be predictive; otherwise not used)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "20%-30% (tornado)",
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "MEDICAID.capitation_pmpm_year1",
+   "value": 510.0,
+   "status": "P",
+   "basis": "Matches Louisiana SFY2025 capitation excluding directed payments ($510.09 PMPM).",
+   "sources": [
+    {
+     "title": "Louisiana SFY2026 Healthy Louisiana rate certification (Milliman)",
+     "url": "https://ldh.la.gov/assets/medicaid/Contracts-PC/05_18_26/Item31_Attachment_D11b_SFY_2026_Rate_Certification.pdf",
+     "date": "2025-08-18",
+     "figure": "capitation excl. directed payments $510.09 (SFY2025) -> $562.98 PMPM"
+    }
+   ],
+   "asop": [
+    "ASOP 49 \u00a72.1 (actuarially sound: reasonable, appropriate, attainable costs)"
+   ],
+   "sensitivity": null
+  },
+  {
+   "key": "MEDICAID.annual_rate_update",
+   "value": 0.045,
+   "status": "D",
+   "basis": "Equal to the trend assumption: under ASOP 49 \u00a72.1 rates are certified to cover attainable cost, so a permanent rate-below-trend gap is not a defensible expectation. Rate risk is in the tornado and Monte Carlo.",
+   "sources": [
+    {
+     "title": "Louisiana SFY2026 Healthy Louisiana rate certification (Milliman)",
+     "url": "https://ldh.la.gov/assets/medicaid/Contracts-PC/05_18_26/Item31_Attachment_D11b_SFY_2026_Rate_Certification.pdf",
+     "date": "2025-08-18",
+     "figure": "capitation excl. directed payments $510.09 (SFY2025) -> $562.98 PMPM"
+    }
+   ],
+   "asop": [
+    "ASOP 49 \u00a72.1 (actuarially sound: reasonable, appropriate, attainable costs)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "3%-6%"
+  },
+  {
+   "key": "MEDICAID.medical_cost_ratio_year1",
+   "value": 0.88,
+   "status": "P",
+   "basis": "88%: Milliman MCO MLR 87.1% (2023) to 90.6% (2024); with admin 7.8% and taxes 2.3% it leaves ~1.9% margin, consistent with ASOP 49 margin and industry results.",
+   "sources": [
+    {
+     "title": "Milliman: Medicaid managed care financial results 2024 / 2025",
+     "url": "https://www.milliman.com/en/insight/medicaid-managed-care-financial-results-2025",
+     "date": "2026-06-29",
+     "figure": "SAP MLR 90.6% (2024), 87.1% (2023); admin 7.7% net of taxes; taxes/fees 2.3%; underwriting result -0.6% (2024), -0.1% (2025); RBC median 414%"
+    }
+   ],
+   "asop": [
+    "ASOP 49 \u00a73.2.12 (non-benefit costs, cost of capital and risk margin)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "86%-92%"
+  },
+  {
+   "key": "MEDICAID.new_state_acuity_load_year1",
+   "value": 0.03,
+   "status": "J",
+   "basis": "Year-1 unmanaged need in a new state; no public basis.",
+   "sources": [],
+   "asop": [
+    "ASOP 25 \u00a73.3 / \u00a73.4 (no relevant experience: professional judgment; credibility not always precise)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "0%-6%"
+  },
+  {
+   "key": "MEDICAID.claim_trend",
+   "value": 0.045,
+   "status": "P",
+   "basis": "Pure trend 4.5%: rate-certification PMPM trend 3-4% plus acuity (AHCCCS), NHE Medicaid spending +5.0%/yr incl. mix; excludes adjustments modelled elsewhere (ASOP 49 \u00a73.2.9).",
+   "sources": [
+    {
+     "title": "CMS OACT National Health Expenditure Projections 2025-34",
+     "url": "https://www.cms.gov/files/document/nhe-projections-forecast-summary.pdf",
+     "date": "2026-06-24",
+     "figure": "Medicaid spending +5.0%/yr 2025-34; enrollment 81.1M (2025) to 81.8M (2034)"
+    },
+    {
+     "title": "AHCCCS CYE 2027 preliminary capitation rate letter",
+     "url": "https://azahcccs.gov/shared/Downloads/Reporting/2026/2026_JLBC_PreliminaryCapRateLetter.pdf",
+     "date": "2026-08-13",
+     "figure": "PMPM trend 3.0-4.0% plus acuity adjustment +1.0-1.5%"
+    }
+   ],
+   "asop": [
+    "ASOP 49 \u00a73.2.9 (trend excludes adjustments captured elsewhere)",
+    "ASOP 25 \u00a73.3 (relevant experience must be predictive; otherwise not used)"
+   ],
+   "sensitivity": "3.5%-5.5%"
+  },
+  {
+   "key": "MEDICAID.mlr_floor",
+   "value": 0.85,
+   "status": "S",
+   "basis": "Federal 85% minimum MLR; remittance is a state contract term.",
+   "sources": [
+    {
+     "title": "42 CFR 438.8 (Medicaid MLR)",
+     "url": "https://www.govinfo.gov/content/pkg/CFR-2016-title42-vol4/pdf/CFR-2016-title42-vol4-sec438-8.pdf",
+     "date": "current",
+     "figure": "MLR at least 85%; remittance only if the state requires it"
+    }
+   ],
+   "asop": [
+    "ASOP 49 \u00a72.1 (actuarially sound: reasonable, appropriate, attainable costs)"
+   ],
+   "sensitivity": null
+  },
+  {
+   "key": "MEDICAID.premium_tax",
+   "value": 0.023,
+   "status": "P",
+   "basis": "Taxes and fees 2.3% of revenue (industry average); use the state's actual rate.",
+   "sources": [
+    {
+     "title": "Milliman: Medicaid managed care financial results 2024 / 2025",
+     "url": "https://www.milliman.com/en/insight/medicaid-managed-care-financial-results-2025",
+     "date": "2026-06-29",
+     "figure": "SAP MLR 90.6% (2024), 87.1% (2023); admin 7.7% net of taxes; taxes/fees 2.3%; underwriting result -0.6% (2024), -0.1% (2025); RBC median 414%"
+    }
+   ],
+   "asop": [
+    "ASOP 49 \u00a73.2.12 (non-benefit costs, cost of capital and risk margin)"
+   ],
+   "sensitivity": "1.5%-6%"
+  },
+  {
+   "key": "MEDICAID.admin_pmpm_year1",
+   "value": 40.0,
+   "status": "P",
+   "basis": "$40 PMPM = 7.8% of capitation; industry admin 7.7% net of taxes; Medicaid-focused median $46.41.",
+   "sources": [
+    {
+     "title": "Milliman: Medicaid managed care financial results 2024 / 2025",
+     "url": "https://www.milliman.com/en/insight/medicaid-managed-care-financial-results-2025",
+     "date": "2026-06-29",
+     "figure": "SAP MLR 90.6% (2024), 87.1% (2023); admin 7.7% net of taxes; taxes/fees 2.3%; underwriting result -0.6% (2024), -0.1% (2025); RBC median 414%"
+    }
+   ],
+   "asop": [
+    "ASOP 49 \u00a73.2.12 (non-benefit costs, cost of capital and risk margin)"
+   ],
+   "sensitivity": "$34-$46"
+  },
+  {
+   "key": "MEDICAID.startup_cost_year1",
+   "value": 6000000.0,
+   "status": "J",
+   "basis": "Implementation, network, systems; no public basis.",
+   "sources": [],
+   "asop": [
+    "ASOP 41 (disclose judgment assumptions and reliance on others)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "$4M-$10M"
+  },
+  {
+   "key": "MEDICAID.rate_cells.cells",
+   "value": [
+    "CHILD",
+    "ADULT",
+    "ABD"
+   ],
+   "status": "M",
+   "basis": "Child / Adult / ABD rate-cell structure.",
+   "sources": [],
+   "asop": [
+    "ASOP 49 \u00a72.1 (actuarially sound: reasonable, appropriate, attainable costs)"
+   ],
+   "sensitivity": null
+  },
+  {
+   "key": "MEDICAID.rate_cells.member_share",
+   "value": [
+    0.524,
+    0.358,
+    0.118
+   ],
+   "status": "J",
+   "basis": "Contract mix taken from the synthetic book (placeholder for the state data book); national FYE mix is 35.7/44.8/19.5 (MACPAC). With relativities normalized and equal churn by cell, the mix has no effect on the results; swept against the MACPAC mix.",
+   "sources": [
+    {
+     "title": "MACPAC MACStats Exhibits 15 and 22 (FY2023)",
+     "url": "https://www.macpac.gov/wp-content/uploads/2026/01/EXHIBIT-22.-Medicaid-Benefit-Spending-Per-Full-Year-Equivalent-FYE-Enrollee-by-State-and-Eligibility-Group-FY-2023.pdf",
+     "date": "2026-01",
+     "figure": "per FYE enrollee: child $4,040, adult ~$7,070, aged/disabled ~$23,849 -> relativities ~0.51-0.54 / 0.90-0.95 / 3.2-3.5"
+    }
+   ],
+   "asop": [
+    "ASOP 49 \u00a72.1 (actuarially sound: reasonable, appropriate, attainable costs)"
+   ],
+   "sensitivity": "MACPAC national mix (swept: no effect at equal churn)",
+   "synthetic_link": "derived"
+  },
+  {
+   "key": "MEDICAID.rate_cells.capitation_relativity",
+   "value": [
+    0.5753,
+    0.9461,
+    3.0418
+   ],
+   "status": "P",
+   "basis": "Consistent with MACPAC per-FYE spending relativities (0.51-0.54 / 0.90-0.95 / 3.2-3.5; MACPAC includes LTSS often carved out).",
+   "sources": [
+    {
+     "title": "MACPAC MACStats Exhibits 15 and 22 (FY2023)",
+     "url": "https://www.macpac.gov/wp-content/uploads/2026/01/EXHIBIT-22.-Medicaid-Benefit-Spending-Per-Full-Year-Equivalent-FYE-Enrollee-by-State-and-Eligibility-Group-FY-2023.pdf",
+     "date": "2026-01",
+     "figure": "per FYE enrollee: child $4,040, adult ~$7,070, aged/disabled ~$23,849 -> relativities ~0.51-0.54 / 0.90-0.95 / 3.2-3.5"
+    }
+   ],
+   "asop": [
+    "ASOP 49 \u00a72.1 (actuarially sound: reasonable, appropriate, attainable costs)"
+   ],
+   "sensitivity": null
+  },
+  {
+   "key": "MEDICAID.rate_cells.loss_ratio_relativity",
+   "value": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "status": "J",
+   "basis": "1.0: rates certified per cell (ASOP 49 \u00a73.2.2) target the same loss ratio.",
+   "sources": [],
+   "asop": [
+    "ASOP 49 \u00a72.1 (actuarially sound: reasonable, appropriate, attainable costs)"
+   ],
+   "sensitivity": "0.95-1.05 by cell"
+  },
+  {
+   "key": "MEDICAID.rate_cells.disenrollment_relativity",
+   "value": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "status": "J",
+   "basis": "1.0 for parsimony; MACPAC shows lower churn for disabled (9%) than adults (28%), a refinement for the state data. Material: at MACPAC churn by cell the mix drifts toward high-capitation ABD members and DE NPV turns positive (swept).",
+   "sources": [
+    {
+     "title": "MACPAC: An updated look at rates of churn in Medicaid and CHIP",
+     "url": "https://www.macpac.gov/wp-content/uploads/2021/10/An-Updated-Look-at-Rates-of-Churn-and-Continuous-Coverage-in-Medicaid-and-CHIP.pdf",
+     "date": "2021-10",
+     "figure": "21% disenrolled within 12 months (2018): children 19%, MAGI adults 28%, disabled 9%"
+    }
+   ],
+   "asop": [
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "MACPAC cell churn 19% / 28% / 9% (swept)"
+  },
+  {
+   "key": "MEDICAID.risk_adjustment.plan_acuity",
+   "value": 1.0,
+   "status": "J",
+   "basis": "1.0 = state average (budget neutral).",
+   "sources": [],
+   "asop": [
+    "ASOP 45 (risk adjustment: accuracy and completeness of diagnosis coding)"
+   ],
+   "sensitivity": "0.97-1.03 (tornado)"
+  },
+  {
+   "key": "MEDICAID.risk_adjustment.revenue_capture",
+   "value": 0.8,
+   "status": "J",
+   "basis": "Share of acuity difference recognized; coding completeness.",
+   "sources": [],
+   "asop": [
+    "ASOP 45 (risk adjustment: accuracy and completeness of diagnosis coding)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "60%-100%"
+  },
+  {
+   "key": "MEDICAID.claim_payment_pattern",
+   "value": [
+    0.33,
+    0.36,
+    0.15,
+    0.08,
+    0.04,
+    0.02,
+    0.01,
+    0.005,
+    0.005
+   ],
+   "status": "J",
+   "basis": "As Med Supp.",
+   "sources": [],
+   "asop": [
+    "ASOP 23 (data quality; disclose limitations of public data)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "+/-1 month",
+   "synthetic_link": "equals_generator"
+  },
+  {
+   "key": "MEDICAID.required_capital_pct_of_annual_claims",
+   "value": 0.15,
+   "status": "J",
+   "basis": "NAIC H2 factors 0.083-0.149 at a ~400% RBC target (MCO median 414%) before covariance and managed-care credit.",
+   "sources": [
+    {
+     "title": "NAIC Health RBC H2 risk factor exhibits",
+     "url": "https://content.naic.org/sites/default/files/inline-files/4.2_H2%20Risk%20Factor%20Summary%20Exhibits_Embed%20%28FINAL%20REV%29_0.pdf",
+     "date": "2025",
+     "figure": "comprehensive medical factor 0.1493 (first $25M), 0.0893 above; proposed Medicaid 0.083-0.148"
+    },
+    {
+     "title": "Milliman: Medicaid managed care financial results 2024 / 2025",
+     "url": "https://www.milliman.com/en/insight/medicaid-managed-care-financial-results-2025",
+     "date": "2026-06-29",
+     "figure": "SAP MLR 90.6% (2024), 87.1% (2023); admin 7.7% net of taxes; taxes/fees 2.3%; underwriting result -0.6% (2024), -0.1% (2025); RBC median 414%"
+    }
+   ],
+   "asop": [
+    "ASOP 58 \u00a73.8 (ERM stress testing; replaces repealed ASOPs 46/47)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "10%-25%"
+  },
+  {
+   "key": "MEDICAID.contract_terms.quality_withhold.withhold_pct",
+   "value": 0.02,
+   "status": "P",
+   "basis": "2.0% of capitation (Louisiana: 1% quality + 1% VBP); NC 1.5%; TX 3% at risk.",
+   "sources": [
+    {
+     "title": "Louisiana CY2022 Medicaid rate certification; LDH 2019 Quality Year-End Review",
+     "url": "https://www.ldh.la.gov/assets/medicaid/Contracts-PC/11.24.21/AttachmentD_RateCertificationCY2022.pdf",
+     "date": "2021-11-15",
+     "figure": "withhold 2.0% of monthly capitation (1% quality + 1% VBP); ~85% of quality withhold earned (2018)"
+    },
+    {
+     "title": "42 CFR 438.6 (special contract provisions: withholds, incentives, directed payments)",
+     "url": "https://www.law.cornell.edu/cfr/text/42/438.6",
+     "date": "current",
+     "figure": "withhold portion must be reasonably achievable; incentives capped at 105% of capitation; directed payments in contracts"
+    }
+   ],
+   "asop": [
+    "ASOP 49 \u00a72.1 (actuarially sound: reasonable, appropriate, attainable costs)"
+   ],
+   "sensitivity": "1%-3%"
+  },
+  {
+   "key": "MEDICAID.contract_terms.quality_withhold.expected_earn_back",
+   "value": 0.85,
+   "status": "P",
+   "basis": "85%: LDH quality withhold ~85% earned (2018); CMS MMP average 83.0%.",
+   "sources": [
+    {
+     "title": "Louisiana CY2022 Medicaid rate certification; LDH 2019 Quality Year-End Review",
+     "url": "https://www.ldh.la.gov/assets/medicaid/Contracts-PC/11.24.21/AttachmentD_RateCertificationCY2022.pdf",
+     "date": "2021-11-15",
+     "figure": "withhold 2.0% of monthly capitation (1% quality + 1% VBP); ~85% of quality withhold earned (2018)"
+    },
+    {
+     "title": "CMS CY2023 Medicare-Medicaid plan quality withhold results",
+     "url": "https://www.cms.gov/files/document/cy-2023-quality-withhold-comprehensive-analysis-results.pdf",
+     "date": "2024",
+     "figure": "28-plan average earned back 83.0%"
+    }
+   ],
+   "asop": [
+    "ASOP 49 \u00a72.1 (actuarially sound: reasonable, appropriate, attainable costs)",
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "60%-100%"
+  },
+  {
+   "key": "MEDICAID.contract_terms*",
+   "value": {
+    "acuity_shift": {
+     "medical_factor_by_year": [],
+     "risk_adjustment_lag_years": 1
+    },
+    "quality_withhold": {
+     "withhold_pct": 0.02,
+     "expected_earn_back": 0.85
+    },
+    "directed_payments": {
+     "pmpm_year1": 0.0,
+     "annual_trend": 0.0
+    },
+    "mlr_rule": {
+     "type": "floor",
+     "corridor": {
+      "target_mlr": 0.88,
+      "band_1": 0.02,
+      "band_2": 0.05,
+      "plan_share_band_2": 0.5,
+      "plan_share_beyond": 0.0
+     }
+    }
+   },
+   "status": "J",
+   "basis": "Directed payments 0, no acuity path, MLR floor rule (corridor parameters inactive): contract-specific under 42 CFR 438.6; set from the state contract. The acuity path is swept; directed payments are a pass-through; the corridor branches are tied out in Excel at non-neutral settings.",
+   "sources": [
+    {
+     "title": "42 CFR 438.6 (special contract provisions: withholds, incentives, directed payments)",
+     "url": "https://www.law.cornell.edu/cfr/text/42/438.6",
+     "date": "current",
+     "figure": "withhold portion must be reasonably achievable; incentives capped at 105% of capitation; directed payments in contracts"
+    }
+   ],
+   "asop": [
+    "ASOP 49 \u00a72.1 (actuarially sound: reasonable, appropriate, attainable costs)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "acuity path 1.00 / 1.04 / 1.03 with a 1-year RA lag (swept)"
+  },
+  {
+   "key": "monte_carlo.n_sims",
+   "value": 10000,
+   "status": "M",
+   "basis": "Simulation size (sampling error of the mean < 1% of NPV).",
+   "sources": [],
+   "asop": [],
+   "sensitivity": null
+  },
+  {
+   "key": "monte_carlo.seed",
+   "value": 2026,
+   "status": "M",
+   "basis": "Reproducibility.",
+   "sources": [],
+   "asop": [],
+   "sensitivity": null
+  },
+  {
+   "key": "monte_carlo.medicaid_renewal_prob",
+   "value": 0.75,
+   "status": "D",
+   "basis": "Equals MEDICAID.renewal_probability.",
+   "sources": [],
+   "asop": [
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": null
+  },
+  {
+   "key": "monte_carlo.trend_shock_sd",
+   "value": 0.01,
+   "status": "J",
+   "basis": "Parameter uncertainty in long-run trend: benchmark SDs 1.0-1.5 pt (trend_benchmarks.json); calibrate with estimate_mc_parameters.py.",
+   "sources": [],
+   "asop": [
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)",
+    "ASOP 58 \u00a73.8 (ERM stress testing; replaces repealed ASOPs 46/47)"
+   ],
+   "sensitivity": "0.5-1.5 pt (swept in npv_mc_parameter_sensitivity.csv)"
+  },
+  {
+   "key": "monte_carlo.lapse_multiplier_sd",
+   "value": 0.15,
+   "status": "J",
+   "basis": "Gen Re lapse range 4-21% around 11% supports a wide spread.",
+   "sources": [
+    {
+     "title": "Gen Re U.S. Medicare Supplement Survey (2024 data)",
+     "url": "https://www.genre.com/content/dam/generalreinsuranceprogram/documents/surveylhmedsupp25-en.pdf",
+     "date": "2025",
+     "figure": "open-block lapse incl. mortality avg 11% (4-21%); first-year commission to writing agent avg 19% (9-29%); open-block loss ratio 87.1%"
+    }
+   ],
+   "asop": [
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "0.10-0.25 (swept in npv_mc_parameter_sensitivity.csv)"
+  },
+  {
+   "key": "monte_carlo.medsupp_rate_increase_deviation_sd",
+   "value": 0.008,
+   "status": "J",
+   "basis": "Approval uncertainty; calibrate from filing history.",
+   "sources": [],
+   "asop": [
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "0.5-1.5 pt (swept in npv_mc_parameter_sensitivity.csv)"
+  },
+  {
+   "key": "monte_carlo.medicaid_rate_update_sd",
+   "value": 0.01,
+   "status": "J",
+   "basis": "Rate-setting uncertainty.",
+   "sources": [],
+   "asop": [
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
+   ],
+   "sensitivity": "0.5-1.5 pt (swept in npv_mc_parameter_sensitivity.csv)"
+  },
+  {
+   "key": "monte_carlo.correlations*",
+   "value": {
+    "order": [
+     "lapse",
+     "trend",
+     "medsupp_rate_increase_deviation (assumed - approved)",
+     "medicaid_rate_update"
+    ],
+    "matrix": [
+     [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      1.0,
+      0.0,
+      0.5
+     ],
+     [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.5,
+      0.0,
+      1.0
+     ]
+    ]
+   },
+   "status": "J",
+   "basis": "Judgment correlations; trend / Med Supp rate correlation 0 because the explicit filing response models it.",
+   "sources": [],
+   "asop": [
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)",
+    "ASOP 58 \u00a73.8 (ERM stress testing; replaces repealed ASOPs 46/47)"
+   ],
+   "sensitivity": "trend / Medicaid update correlation 0-0.8 (swept in npv_mc_parameter_sensitivity.csv)"
+  },
+  {
+   "key": "monte_carlo.process_risk*",
+   "value": {
+    "trend_sd_annual": 0.01,
+    "trend_ar1_phi": 0.5,
+    "medsupp_approval_noise_sd": 0.01,
+    "medicaid_rate_update_noise_sd": 0.01,
+    "seed_offset": 7919
+   },
+   "status": "J",
+   "basis": "Year-to-year volatility; calibrate with estimate_mc_parameters.py.",
+   "sources": [],
+   "asop": [
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)",
+    "ASOP 58 \u00a73.8 (ERM stress testing; replaces repealed ASOPs 46/47)"
+   ],
+   "sensitivity": "yearly trend SD 0.5-1.5 pt, AR(1) phi 0.25-0.75 (swept in npv_mc_parameter_sensitivity.csv)"
+  },
+  {
+   "key": "monte_carlo.management_response*",
+   "value": {
+    "MEDSUPP": {
+     "lag_years": 2,
+     "gap_closure_per_filing": 0.5
+    },
+    "DENTAL_VISION": {
+     "lag_years": 2,
+     "gap_closure_per_filing": 0.5
+    }
+   },
+   "status": "J",
+   "basis": "Rate filings follow experience with a lag of 2 years for both lines (a filing effective at the start of year s+1 is prepared during year s from experience through year s-1, so a 1-year lag would use claims not yet known). Observed Med Supp increases (10.6-11.7%) exceeding projected trend show filings respond to realized claims. Strength is judgment (attribution shows 0-0.75).",
+   "sources": [
+    {
+     "title": "CSG Actuarial: Medicare Supplement rate increases continue higher trend into 2026",
+     "url": "https://csgactuarial.com/news/average-medicare-supplement-rate-increases-continue-higher-trend-into-2026",
+     "date": "2026-01",
+     "figure": "average Med Supp rate increase 10.6% (2025), 11.7% (2026 YTD)"
+    }
+   ],
+   "asop": [
+    "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)",
+    "ASOP 41 (disclose judgment assumptions and reliance on others)"
+   ],
+   "sensitivity": "gap closure per filing 0 / 0.25 / 0.75 (npv_monte_carlo_attribution.csv)"
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+  "_readme": "Rules for 12_drift_monitoring.py (v4). band_k: width of the credibility-scaled A/E band in standard deviations. persistence_quarters: consecutive same-side breaches before a WATCH becomes an ALERT. forecast_bias_trigger: shown for context (the persistence test itself is in 02). vintage_bias_z / vintage_bias_min: a vintage-bias WATCH needs both |z| above this and a mean bias above this size (z is overstated because vintages overlap). breakeven_headroom: WATCH when a driver is within this distance of its DE break-even (absolute for rates, multiplier distance for multipliers). Judgment values; the forecasting team owns them.",
+  "band_k": 2.0,
+  "persistence_quarters": 3,
+  "forecast_bias_trigger": 0.05,
+  "vintage_bias_z": 2.0,
+  "vintage_bias_min": 0.01,
+  "breakeven_headroom": {"Claim trend": 0.01, "Annual rate update": 0.01, "Annual rate increase": 0.01,
+                         "Claim-cost level (multiplier, all years)": 0.05, "Starting medical cost ratio": 0.02}
+}

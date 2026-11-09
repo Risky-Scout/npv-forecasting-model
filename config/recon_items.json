@@ -1,0 +1,24 @@
+{
+  "_readme": "Registered reconciling items between the data feeds and the general ledger. Each item explains a specific difference in one line and month; any difference not explained here (beyond the tolerance) fails the tie-out. Items are reviewed and cleared every cycle; an item that no longer matches a difference also fails, so stale entries cannot hide new breaks.",
+  "tolerance_per_cell": 1.00,
+  "items": [
+    {
+      "id": "RI-2025-06-01",
+      "control": "paid_claims",
+      "lob": "MEDSUPP",
+      "month": "2025-06",
+      "amount": 12500.00,
+      "explanation": "Provider settlement booked by manual journal entry; not in the claims feed. Excluded from experience studies; included in financial reporting.",
+      "owner": "Claims finance (synthetic example)"
+    },
+    {
+      "id": "RI-2025-07-01",
+      "control": "premium",
+      "lob": "MEDICAID",
+      "month": "2025-07",
+      "amount": 290950.33,
+      "explanation": "Kentucky Medicaid capitation received for July 2025; the eligibility file for that month was not delivered (exception DQ-0142), so the feed holds no member-months to match it.",
+      "owner": "Medicaid finance (synthetic example)"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "_readme": "Approved exceptions register. An exception lets a specific, named blocker through for a limited time, with a reason and an approver. Expired or unmatched exceptions do not count. In production approval sits with the data owner and the appointed actuary, and every exception is reviewed at each cycle.",
+  "exceptions": [
+    {
+      "id": "DQ-0142",
+      "check": "missing_eligibility_month",
+      "lob": "MEDICAID",
+      "key": "KY|2025-07",
+      "reason": "Kentucky Medicaid eligibility file for July 2025 was not delivered and has been re-requested from the state vendor. The month is excluded consistently from exposure and claims until re-delivery; the 336 Kentucky claims incurred that month are held out of experience, not lost.",
+      "approved_by": "Data owner, Medicaid eligibility (synthetic example)",
+      "approved_on": "2026-03-02",
+      "expires": "2027-06-30",
+      "renewed_on": "2026-11-04",
+      "renewal_note": "Renewed by the data owner (synthetic example) for 12 months after the state vendor confirmed re-delivery is pending. Reviewed at each cycle; the month stays excluded consistently from exposure and claims.",
+      "prior_expiry": "2026-06-30"
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "_readme": "Approved assumption sets. The NPV engine runs in production mode only on an assumption file whose SHA-256 (canonical JSON of the assumption set plus the governed configuration files, see 03b_assumption_governance.py --hash) appears here for the same model version. Each entry records who approved what, when, and for which use. In production approval sits with the appointed / responsible actuary after the assumption committee reviews output/assumptions/assumption_indications.csv; entries are added through a reviewed change (pull request), never edited in place. The entry below is a labelled example for the synthetic practice book. Every REVIEW item raised by the indications must have an entry in review_dispositions (key = LOB.assumption); otherwise the set is treated as not approved.",
+  "approvals": [
+    {
+      "id": "AS-SYN-2026-001",
+      "sha256": "649d15ecd563a8bb0cda08a08379eab7e89d3db6407a70fda9ce11264b62ef17",
+      "model_version": "3.0.0",
+      "approved_by": "Responsible actuary (synthetic example)",
+      "approved_on": "2026-03-04",
+      "scope": "Synthetic practice book: model validation and demonstration only. Not for pricing or reporting.",
+      "notes": "Illustrative assumptions for the synthetic book. Indications reviewed: 2 REVIEW items, both claim trend. Med Supp: normalized fit 6.82% vs 6.0% assumed; D&V: fit 2.58% vs 3.5% assumed. Disposition: keep the assumed trends, because four years of experience pin trend only to about +/-2 points (backtest Test B: using the Med Supp fit would cut NPV by about 70%), and the assumed values are the benchmark-based judgment. Anti-selection, dynamic-lapse slope, risk-adjustment capture and Monte Carlo correlations are judgment values with no experience basis on this book.",
+      "review_dispositions": {
+        "MEDSUPP.claim_trend": "Keep 6.0%. Normalized fit 6.82%; four years pin trend only to about +/-2 points and the fit would cut NPV by about 70% (backtest Test B). 6.0% is the benchmark-based judgment.",
+        "DENTAL_VISION.claim_trend": "Keep 3.5%. Fit 2.58% from four noisy years; 3.5% is the benchmark-based judgment."
+      }
+    },
+    {
+      "id": "AS-SYN-2026-002",
+      "sha256": "9fe9bd1843175cd87f7f86cf79e554bad8aa4df044fa0cfcdd6ff9dea39039ef",
+      "model_version": "4.0.0",
+      "approved_by": "Responsible actuary (synthetic example)",
+      "approved_on": "2026-11-04",
+      "scope": "Synthetic practice book: model validation and demonstration only. Not for pricing or reporting.",
+      "notes": "v4 assumption set. Changes from AS-SYN-2026-001: (1) claim trend set to the v4 credibility-weighted indications - Med Supp 6.75% (normalized fit 6.82%, bootstrap SE 0.41 pt, Z = 0.86 vs a 6.5% placeholder benchmark) and D&V 3.65% (fit on the new pent-up/product-normalized series 4.35%, SE 1.02 pt, Z = 0.49 vs a 3.0% placeholder benchmark). The v3 disposition (keep 6.0% / 3.5% because four years pin trend only to +/-2 pts) is withdrawn: the v4 seed study measured the sampling SD of the normalized fits at about 0.6 pt (Med Supp) and 1.2 pt (D&V), and the 6.0% / 3.5% values coincided with the synthetic generator's true trends, which no production benchmark can do. On this synthetic book the adopted Med Supp trend is above the true 6.0% (the shipped data is a +1.4 SD draw); backtest Test B reports the resulting NPV error. (2) New v4 blocks: Med Supp model points (mix from 2024-25 issues, Plan F excluded), D&V benefit categories (experience shares, neutral otherwise), Medicaid contract terms (neutral: the synthetic contract has none), Monte Carlo process risk and rate-filing response (judgment), trend / Med Supp rate-shortfall correlation set to 0 (replaced by the explicit response). Benchmarks in config/trend_benchmarks.json are placeholders: Humana's pricing trends replace them before any production use. The hash covers the assumption set AND the governed configuration files (config/claim_cost_curves.json, config/trend_benchmarks.json, config/forecast_config.json; assumption_control.GOVERNED_CONFIGS), so editing any of them needs a new approval.",
+      "review_dispositions": {}
+    },
+    {
+      "id": "AS-SYN-2026-003",
+      "sha256": "84f1b5c0427ff88b9b0eabb54c89b643b2131ba20196d246a70d6f2c20caf82d",
+      "model_version": "4.1.0",
+      "approved_by": "Responsible actuary (synthetic example)",
+      "approved_on": "2026-11-04",
+      "scope": "Synthetic practice book: model validation and demonstration only. Not for pricing or reporting.",
+      "notes": "v4.1 public-source assumption basis. Every assumption is documented in config/assumption_basis.json (docs/ASSUMPTION_BASIS.md) as public source, statute, derived, judgment (with sensitivity range) or model setting. Policy: the synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3), so no shipped value relies on it; its indications are shown and dispositioned. Changes from AS-SYN-2026-002: trend to public benchmarks (Med Supp 6.5% Trustees 2026, D&V 3.5%, Medicaid 4.5%); Med Supp rate increase 7.5% (consistency), commission 20/10 (200% rule), mortality SSA x 75%, premium tax 2.25%; D&V maintenance $50; Medicaid rate update = trend 4.5% (ASOP 49), cost ratio 88%, admin $40, tax 2.3%, capital 15%; hurdle 8.5%, earned rate 4.0%. The hash covers the governed configuration files.",
+      "review_dispositions": {
+        "MEDSUPP.claim_trend": "Keep 6.5% (2026 Trustees Part B per-enrollee pure trend). The 6.80% indication blends the synthetic book's 6.82% fit, which is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0 is given to it. Re-blend when Humana experience is loaded.",
+        "DENTAL_VISION.claim_trend": "Keep 3.5% (ADA HPI / Segal benchmark). The 3.90% indication blends the synthetic book's fit, which is not relevant experience (ASOP 25 §3.3)."
+      }
+    },
+    {
+      "id": "AS-SYN-2026-004",
+      "sha256": "6b65597dabbd41de729dad9c3fd210a5426399e5834751f3238e69c29abb7689",
+      "model_version": "4.1.0",
+      "approved_by": "Responsible actuary (synthetic example)",
+      "approved_on": "2026-11-04",
+      "scope": "Synthetic practice book: model validation and demonstration only. Not for pricing or reporting.",
+      "notes": "Supersedes AS-SYN-2026-003. Additional public sources: Med Supp claim age slope 3.8% (Milliman, KFF), premium age step 3.0% (Maryland 2026 rate guide), Plan N 0.77 / HDG 0.18 (Maryland 2026), rate increase re-derived 7.3%; D&V lapse 30% flat (filed dental memoranda); Medicaid quality withhold 2% with 85% earn-back (Louisiana, CMS); DAC tax 9.2% on Med Supp (IRC §848); D&V filing-response lag 2 years. Every assumption is documented in config/assumption_basis.json. The hash covers the governed configuration files (claim-cost curves, trend benchmarks, forecast settings incl. the credibility-weighted pooling charge).",
+      "review_dispositions": {
+        "MEDSUPP.claim_trend": "Keep 6.5% (2026 Trustees Part B per-enrollee pure trend). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. Re-blend when Humana experience is loaded.",
+        "DENTAL_VISION.claim_trend": "Keep 3.5% (ADA HPI / Segal). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. ",
+        "DENTAL_VISION.lapse_by_duration[1]": "Keep 30% (filed individual dental memoranda, public). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. The in-force forecast of the existing book uses the book's own lapse experience.",
+        "DENTAL_VISION.lapse_by_duration[2]": "As duration 1.",
+        "DENTAL_VISION.lapse_by_duration[3+]": "As duration 1."
+      }
+    },
+    {
+      "id": "AS-SYN-2026-005",
+      "sha256": "0bed76b5d7371a4ab550bbadc28aaededafd4915af516ff26b326ae8b3ff8874",
+      "model_version": "4.1.0",
+      "approved_by": "Responsible actuary (synthetic example)",
+      "approved_on": "2026-11-04",
+      "scope": "Synthetic practice book: model validation and demonstration only. Not for pricing or reporting.",
+      "notes": "Supersedes AS-SYN-2026-004. No assumption VALUE changed: the documentation strings (_readme) in npv_assumptions.json were corrected to state the v4.1 public basis (they still described the values as illustrative, the plan relativities as synthetic-generator factors and the Medicaid contract terms as all neutral). The hash covers the text, so the set is re-approved. Additional public sources: Med Supp claim age slope 3.8% (Milliman, KFF), premium age step 3.0% (Maryland 2026 rate guide), Plan N 0.77 / HDG 0.18 (Maryland 2026), rate increase re-derived 7.3%; D&V lapse 30% flat (filed dental memoranda); Medicaid quality withhold 2% with 85% earn-back (Louisiana, CMS); DAC tax 9.2% on Med Supp (IRC §848); D&V filing-response lag 2 years. Every assumption is documented in config/assumption_basis.json. The hash covers the governed configuration files (claim-cost curves, trend benchmarks, forecast settings incl. the credibility-weighted pooling charge).",
+      "review_dispositions": {
+        "MEDSUPP.claim_trend": "Keep 6.5% (2026 Trustees Part B per-enrollee pure trend). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. Re-blend when Humana experience is loaded.",
+        "DENTAL_VISION.claim_trend": "Keep 3.5% (ADA HPI / Segal). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. ",
+        "DENTAL_VISION.lapse_by_duration[1]": "Keep 30% (filed individual dental memoranda, public). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. The in-force forecast of the existing book uses the book's own lapse experience.",
+        "DENTAL_VISION.lapse_by_duration[2]": "As duration 1.",
+        "DENTAL_VISION.lapse_by_duration[3+]": "As duration 1."
+      }
+    },
+    {
+      "id": "AS-SYN-2026-006",
+      "sha256": "6c94dee71ae2a180d4847baf944aa14adcf9d629bdb1e5bf3aa60263f41b0dcf",
+      "model_version": "4.1.0",
+      "approved_by": "Responsible actuary (synthetic example)",
+      "approved_on": "2026-11-04",
+      "scope": "Synthetic practice book: model validation and demonstration only. Not for pricing or reporting.",
+      "notes": "Supersedes AS-SYN-2026-005. No assumption VALUE changed: the documentation strings of two governed configs were corrected (config/forecast_config.json said the in-force forecast takes lapse from the approved file; since v4.1 it uses the existing book's credibility-weighted lapse experience from 03b, status E; config/claim_cost_curves.json now states that the forecast also uses the book's curves). The hash covers the governed configs, so the set is re-approved. Additional public sources: Med Supp claim age slope 3.8% (Milliman, KFF), premium age step 3.0% (Maryland 2026 rate guide), Plan N 0.77 / HDG 0.18 (Maryland 2026), rate increase re-derived 7.3%; D&V lapse 30% flat (filed dental memoranda); Medicaid quality withhold 2% with 85% earn-back (Louisiana, CMS); DAC tax 9.2% on Med Supp (IRC §848); D&V filing-response lag 2 years. Every assumption is documented in config/assumption_basis.json. The hash covers the governed configuration files (claim-cost curves, trend benchmarks, forecast settings incl. the credibility-weighted pooling charge).",
+      "review_dispositions": {
+        "MEDSUPP.claim_trend": "Keep 6.5% (2026 Trustees Part B per-enrollee pure trend). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. Re-blend when Humana experience is loaded.",
+        "DENTAL_VISION.claim_trend": "Keep 3.5% (ADA HPI / Segal). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. ",
+        "DENTAL_VISION.lapse_by_duration[1]": "Keep 30% (filed individual dental memoranda, public). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. The in-force forecast of the existing book uses the book's own lapse experience.",
+        "DENTAL_VISION.lapse_by_duration[2]": "As duration 1.",
+        "DENTAL_VISION.lapse_by_duration[3+]": "As duration 1."
+      }
+    },
+    {
+      "id": "AS-SYN-2026-007",
+      "sha256": "3f39e8453cfac7358c00cfeea1c94cdfdae5a0b0be4fd5c2d22875a1b7be458f",
+      "model_version": "4.1.0",
+      "approved_by": "Responsible actuary (synthetic example)",
+      "approved_on": "2026-11-04",
+      "scope": "Synthetic practice book: model validation and demonstration only. Not for pricing or reporting.",
+      "notes": "Supersedes AS-SYN-2026-006, after the independent review. (1) Forecast pooling-charge credibility corrected: the full-credibility standard is 1,082 x (1 + CV^2) of excess severity, because the charge is an aggregate (forecast_config.json pooling_charge, new default_excess_cv 1.0 when fewer than 2 large claims). (2) No NPV assumption value changed. Documentation strings corrected to disclose values linked to the synthetic book: the Med Supp model-point mix and issue ages, the D&V category cost shares and the Medicaid member mix are READ OFF the synthetic book as placeholders (none affects the headline results), and several values equal the synthetic generator's own (list in docs/ASSUMPTION_BASIS.md). Additional public sources: Med Supp claim age slope 3.8% (Milliman, KFF), premium age step 3.0% (Maryland 2026 rate guide), Plan N 0.77 / HDG 0.18 (Maryland 2026), rate increase re-derived 7.3%; D&V lapse 30% flat (filed dental memoranda); Medicaid quality withhold 2% with 85% earn-back (Louisiana, CMS); DAC tax 9.2% on Med Supp (IRC §848); D&V filing-response lag 2 years. Every assumption is documented in config/assumption_basis.json. The hash covers the governed configuration files (claim-cost curves, trend benchmarks, forecast settings incl. the credibility-weighted pooling charge).",
+      "review_dispositions": {
+        "MEDSUPP.claim_trend": "Keep 6.5% (2026 Trustees Part B per-enrollee pure trend). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. Re-blend when Humana experience is loaded.",
+        "DENTAL_VISION.claim_trend": "Keep 3.5% (ADA HPI / Segal). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. ",
+        "DENTAL_VISION.lapse_by_duration[1]": "Keep 30% (filed individual dental memoranda, public). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. The in-force forecast of the existing book uses the book's own lapse experience.",
+        "DENTAL_VISION.lapse_by_duration[2]": "As duration 1.",
+        "DENTAL_VISION.lapse_by_duration[3+]": "As duration 1."
+      }
+    },
+    {
+      "id": "AS-SYN-2026-008",
+      "sha256": "f490ec8486fdcb8fc239befba7ed85425f1b14d0870258bf647204d336c3b0dd",
+      "model_version": "4.2.0",
+      "approved_by": "Responsible actuary (synthetic example)",
+      "approved_on": "2026-11-04",
+      "scope": "Synthetic practice book: model validation and demonstration only. Not for pricing or reporting.",
+      "notes": "Model version 4.2.0. Supersedes AS-SYN-2026-007. No assumption value changed. Adds the risk-based pricing policy config/pricing_targets.json (now a governed config): each line priced so P(DE NPV < 0) <= 10% in the Monte Carlo, within the Med Supp 65% minimum loss ratio and the Medicaid 85% MLR floor, with public market references for competitiveness. The 10% tolerance is a judgment default pending Humana's corporate pricing policy. (1) Forecast pooling-charge credibility corrected: the full-credibility standard is 1,082 x (1 + CV^2) of excess severity, because the charge is an aggregate (forecast_config.json pooling_charge, new default_excess_cv 1.0 when fewer than 2 large claims). (2) No NPV assumption value changed. Documentation strings corrected to disclose values linked to the synthetic book: the Med Supp model-point mix and issue ages, the D&V category cost shares and the Medicaid member mix are READ OFF the synthetic book as placeholders (none affects the headline results), and several values equal the synthetic generator's own (list in docs/ASSUMPTION_BASIS.md). Additional public sources: Med Supp claim age slope 3.8% (Milliman, KFF), premium age step 3.0% (Maryland 2026 rate guide), Plan N 0.77 / HDG 0.18 (Maryland 2026), rate increase re-derived 7.3%; D&V lapse 30% flat (filed dental memoranda); Medicaid quality withhold 2% with 85% earn-back (Louisiana, CMS); DAC tax 9.2% on Med Supp (IRC §848); D&V filing-response lag 2 years. Every assumption is documented in config/assumption_basis.json. The hash covers the governed configuration files (claim-cost curves, trend benchmarks, forecast settings incl. the credibility-weighted pooling charge).",
+      "review_dispositions": {
+        "MEDSUPP.claim_trend": "Keep 6.5% (2026 Trustees Part B per-enrollee pure trend). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. Re-blend when Humana experience is loaded.",
+        "DENTAL_VISION.claim_trend": "Keep 3.5% (ADA HPI / Segal). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. ",
+        "DENTAL_VISION.lapse_by_duration[1]": "Keep 30% (filed individual dental memoranda, public). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. The in-force forecast of the existing book uses the book's own lapse experience.",
+        "DENTAL_VISION.lapse_by_duration[2]": "As duration 1.",
+        "DENTAL_VISION.lapse_by_duration[3+]": "As duration 1."
+      }
+    },
+    {
+      "id": "AS-SYN-2026-009",
+      "sha256": "6243044d72276f09bd71b5d8996b166e9a4cea8883fe34aefa7c1de4ebe5527c",
+      "model_version": "4.2.0",
+      "approved_by": "Responsible actuary (synthetic example)",
+      "approved_on": "2026-11-04",
+      "scope": "Synthetic practice book: model validation and demonstration only. Not for pricing or reporting.",
+      "notes": "Supersedes AS-SYN-2026-008 after the final review. config/pricing_targets.json: the Medicaid cost-ratio lever is compared with public MCO MLRs through the PV MLR it produces, and the Med Supp risk target is also measured on the whole model-point portfolio. No assumption value changed. No assumption value changed. Adds the risk-based pricing policy config/pricing_targets.json (now a governed config): each line priced so P(DE NPV < 0) <= 10% in the Monte Carlo, within the Med Supp 65% minimum loss ratio and the Medicaid 85% MLR floor, with public market references for competitiveness. The 10% tolerance is a judgment default pending Humana's corporate pricing policy. (1) Forecast pooling-charge credibility corrected: the full-credibility standard is 1,082 x (1 + CV^2) of excess severity, because the charge is an aggregate (forecast_config.json pooling_charge, new default_excess_cv 1.0 when fewer than 2 large claims). (2) No NPV assumption value changed. Documentation strings corrected to disclose values linked to the synthetic book: the Med Supp model-point mix and issue ages, the D&V category cost shares and the Medicaid member mix are READ OFF the synthetic book as placeholders (none affects the headline results), and several values equal the synthetic generator's own (list in docs/ASSUMPTION_BASIS.md). Additional public sources: Med Supp claim age slope 3.8% (Milliman, KFF), premium age step 3.0% (Maryland 2026 rate guide), Plan N 0.77 / HDG 0.18 (Maryland 2026), rate increase re-derived 7.3%; D&V lapse 30% flat (filed dental memoranda); Medicaid quality withhold 2% with 85% earn-back (Louisiana, CMS); DAC tax 9.2% on Med Supp (IRC §848); D&V filing-response lag 2 years. Every assumption is documented in config/assumption_basis.json. The hash covers the governed configuration files (claim-cost curves, trend benchmarks, forecast settings incl. the credibility-weighted pooling charge).",
+      "review_dispositions": {
+        "MEDSUPP.claim_trend": "Keep 6.5% (2026 Trustees Part B per-enrollee pure trend). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. Re-blend when Humana experience is loaded.",
+        "DENTAL_VISION.claim_trend": "Keep 3.5% (ADA HPI / Segal). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. ",
+        "DENTAL_VISION.lapse_by_duration[1]": "Keep 30% (filed individual dental memoranda, public). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. The in-force forecast of the existing book uses the book's own lapse experience.",
+        "DENTAL_VISION.lapse_by_duration[2]": "As duration 1.",
+        "DENTAL_VISION.lapse_by_duration[3+]": "As duration 1."
+      }
+    }
+  ]
+}

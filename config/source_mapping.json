@@ -1,0 +1,33 @@
+{
+  "_readme": "Active source mapping: where each feed comes from and how its columns and codes map onto the canonical layout in config/data_contract.json. This file is the synthetic book's identity mapping (the source files are already canonical). For Humana extracts, start from config/source_mapping.production_example.json, fill in the real paths, column names and code values from the data dictionary, and point run_config.json at it. 00a_ingest_source_extracts.py applies the mapping and stops the run on any unmapped column or code.",
+  "source_root": "data",
+  "feeds": {
+    "members": {
+      "source": "members.csv", "target": "data/members.csv", "format": "csv",
+      "columns": {"member_id": "member_id", "lob": "lob", "state": "state", "plan": "plan", "rate_cell": "rate_cell",
+                  "issue_month": "issue_month", "issue_age": "issue_age", "term_month": "term_month", "term_reason": "term_reason"},
+      "value_maps": {},
+      "month_columns": {"issue_month": "%Y-%m", "term_month": "%Y-%m"}
+    },
+    "member_months": {
+      "source": "member_months.csv", "target": "data/member_months.csv", "format": "csv",
+      "columns": {"member_id": "member_id", "lob": "lob", "month": "month", "state": "state", "plan": "plan",
+                  "rate_cell": "rate_cell", "premium": "premium"},
+      "value_maps": {},
+      "month_columns": {"month": "%Y-%m"}
+    },
+    "claims": {
+      "source": "claims.csv", "target": "data/claims.csv", "format": "csv",
+      "columns": {"claim_id": "claim_id", "member_id": "member_id", "lob": "lob", "incurred_month": "incurred_month",
+                  "paid_month": "paid_month", "paid_amount": "paid_amount", "service_category": "service_category"},
+      "value_maps": {},
+      "month_columns": {"incurred_month": "%Y-%m", "paid_month": "%Y-%m"}
+    },
+    "finance_controls": {
+      "source": "finance_controls.csv", "target": "data/finance_controls.csv", "format": "csv",
+      "columns": {"control": "control", "lob": "lob", "month": "month", "amount": "amount"},
+      "value_maps": {},
+      "month_columns": {"month": "%Y-%m"}
+    }
+  }
+}

@@ -1,0 +1,413 @@
+{
+ "_readme": "TEMPLATE Databricks Workflow (Jobs API 2.1) for the production cycle. Not executed in a Humana workspace (there is none here); tests/e2e_databricks_job_local.py validates this definition and executes its tasks locally in dependency order. Placeholders in <angle brackets> are set by the Humana Databricks platform team. Each task is one step of run_all.py in production mode, in the same order, so a failed control stops every downstream task. Before the first run: set config/run_config.json mode = production and its dates, point config/source_mapping.json at the landing Volume (raw extracts), confirm the cycle Volume for canonical data and outputs (NPV_DATA_DIR / NPV_OUTPUT_DIR on the job clusters; member-level data is PHI and stays in the governed Volume), add the approved assumption set to config/assumption_approvals.json, and run tests/e2e_production_run.py on the cluster. See docs/RUNBOOK.md. Data and outputs go to one fixed working Volume (NPV_DATA_DIR / NPV_OUTPUT_DIR on both job clusters); after each cycle the run manifest and outputs are archived by cycle (RUNBOOK §3, step 7). Whether a job parameter can be referenced inside cluster environment variables depends on the workspace version, so the template does not rely on it. The cycle (paid-through month, run id) is set in config/run_config.json, which every step reads, so the job takes no parameters. Libraries come from deploy/requirements-databricks.txt, which omits pyspark: the Databricks Runtime provides Spark, and installing PyPI pyspark over it breaks the cluster. Task 'start_run' clears the previous cycle's artefacts first, so a failed run can never show older results. The Spark notebook runs on its own job cluster with NO extra libraries, so the runtime's PySpark, pandas and Arrow are used as shipped; the pinned scientific stack is installed only on the clusters that run the Python steps. Step status lives in the job run; the run manifest releases results only when this run's Excel-to-Python reconciliation passed. v4: adds the in-force forecast, A/E waterfall and forecast-vintage tasks after the NPV engine, and drift monitoring after the reconciliation. NPV_VINTAGE_DIR must point at a PERSISTENT Volume path outside the cycle's working output (the clean start never clears it): it holds every cycle's forecast vintage, which the accuracy-by-horizon scoring needs. The schedule is monthly (10th, 07:00 ET) and starts PAUSED.",
+ "name": "npv-forecasting-production-cycle",
+ "max_concurrent_runs": 1,
+ "tags": {
+  "owner": "actuarial-forecasting",
+  "model": "npv-forecasting",
+  "model_version": "4.0.0"
+ },
+ "email_notifications": {
+  "on_failure": [
+   "<actuarial forecasting distribution list>"
+  ],
+  "no_alert_for_skipped_runs": true
+ },
+ "schedule": {
+  "quartz_cron_expression": "0 0 7 10 * ?",
+  "timezone_id": "America/New_York",
+  "pause_status": "PAUSED"
+ },
+ "job_clusters": [
+  {
+   "job_cluster_key": "npv_cluster",
+   "new_cluster": {
+    "spark_version": "<Databricks Runtime LTS version approved by Humana platform team>",
+    "node_type_id": "<approved node type>",
+    "num_workers": 1,
+    "data_security_mode": "SINGLE_USER",
+    "policy_id": "<actuarial cluster policy id>",
+    "spark_env_vars": {
+     "OPENBLAS_NUM_THREADS": "1",
+     "NPV_DATA_DIR": "/Volumes/<catalog>/npv_forecasting/working/data",
+     "NPV_OUTPUT_DIR": "/Volumes/<catalog>/npv_forecasting/working/output",
+     "NPV_VINTAGE_DIR": "/Volumes/<catalog>/<persistent_vintage_schema>/npv_vintage_registry"
+    }
+   }
+  },
+  {
+   "job_cluster_key": "npv_cluster_libreoffice",
+   "new_cluster": {
+    "spark_version": "<Databricks Runtime LTS version approved by Humana platform team>",
+    "node_type_id": "<approved node type>",
+    "num_workers": 1,
+    "data_security_mode": "SINGLE_USER",
+    "policy_id": "<actuarial cluster policy id>",
+    "spark_env_vars": {
+     "OPENBLAS_NUM_THREADS": "1",
+     "NPV_DATA_DIR": "/Volumes/<catalog>/npv_forecasting/working/data",
+     "NPV_OUTPUT_DIR": "/Volumes/<catalog>/npv_forecasting/working/output",
+     "NPV_VINTAGE_DIR": "/Volumes/<catalog>/<persistent_vintage_schema>/npv_vintage_registry"
+    },
+    "init_scripts": [
+     {
+      "workspace": {
+       "destination": "/Workspace/Repos/actuarial/npv_kit/deploy/install_libreoffice.sh"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "job_cluster_key": "npv_spark_cluster",
+   "new_cluster": {
+    "spark_version": "<Databricks Runtime LTS version approved by Humana platform team>",
+    "node_type_id": "<approved node type>",
+    "num_workers": 1,
+    "data_security_mode": "SINGLE_USER",
+    "policy_id": "<actuarial cluster policy id>",
+    "spark_env_vars": {
+     "OPENBLAS_NUM_THREADS": "1",
+     "NPV_DATA_DIR": "/Volumes/<catalog>/npv_forecasting/working/data",
+     "NPV_OUTPUT_DIR": "/Volumes/<catalog>/npv_forecasting/working/output",
+     "NPV_VINTAGE_DIR": "/Volumes/<catalog>/<persistent_vintage_schema>/npv_vintage_registry"
+    }
+   }
+  }
+ ],
+ "tasks": [
+  {
+   "task_key": "start_run",
+   "job_cluster_key": "npv_cluster",
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/00s_start_run.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 600,
+   "max_retries": 0
+  },
+  {
+   "task_key": "ingest",
+   "job_cluster_key": "npv_cluster",
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/00a_ingest_source_extracts.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0,
+   "depends_on": [
+    {
+     "task_key": "start_run"
+    }
+   ]
+  },
+  {
+   "task_key": "sql_kit",
+   "job_cluster_key": "npv_cluster",
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/01_run_sql_kit.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0,
+   "depends_on": [
+    {
+     "task_key": "ingest"
+    }
+   ]
+  },
+  {
+   "task_key": "controls_gate",
+   "job_cluster_key": "npv_cluster",
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/01b_controls_gate.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0,
+   "depends_on": [
+    {
+     "task_key": "sql_kit"
+    }
+   ]
+  },
+  {
+   "task_key": "trend_study",
+   "job_cluster_key": "npv_cluster",
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/02_claims_trend_forecast.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0,
+   "depends_on": [
+    {
+     "task_key": "controls_gate"
+    }
+   ]
+  },
+  {
+   "task_key": "lapse_study",
+   "job_cluster_key": "npv_cluster",
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/03_lapse_glm_study.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0,
+   "depends_on": [
+    {
+     "task_key": "trend_study"
+    }
+   ]
+  },
+  {
+   "task_key": "assumption_governance",
+   "job_cluster_key": "npv_cluster",
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/03b_assumption_governance.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0,
+   "depends_on": [
+    {
+     "task_key": "lapse_study"
+    }
+   ]
+  },
+  {
+   "task_key": "npv_engine",
+   "job_cluster_key": "npv_cluster",
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/04_npv_engine.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0,
+   "depends_on": [
+    {
+     "task_key": "assumption_governance"
+    }
+   ]
+  },
+  {
+   "task_key": "inforce_forecast",
+   "job_cluster_key": "npv_cluster",
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/09_inforce_forecast.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0,
+   "depends_on": [
+    {
+     "task_key": "npv_engine"
+    }
+   ]
+  },
+  {
+   "task_key": "actual_vs_expected",
+   "job_cluster_key": "npv_cluster",
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/10_actual_vs_expected.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0,
+   "depends_on": [
+    {
+     "task_key": "inforce_forecast"
+    }
+   ]
+  },
+  {
+   "task_key": "forecast_vintages",
+   "job_cluster_key": "npv_cluster",
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/11_forecast_vintages.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0,
+   "depends_on": [
+    {
+     "task_key": "actual_vs_expected"
+    }
+   ]
+  },
+  {
+   "task_key": "spark_experience_pipeline",
+   "job_cluster_key": "npv_spark_cluster",
+   "depends_on": [
+    {
+     "task_key": "npv_engine"
+    }
+   ],
+   "notebook_task": {
+    "notebook_path": "/Workspace/Repos/actuarial/npv_kit/code/databricks/npv_pipeline_databricks",
+    "source": "WORKSPACE",
+    "base_parameters": {
+     "data_path": "/Volumes/<catalog>/npv_forecasting/working/data",
+     "schema": "<catalog>.npv_forecasting",
+     "repo_root": "/Workspace/Repos/actuarial/npv_kit"
+    }
+   },
+   "timeout_seconds": 3600,
+   "max_retries": 0
+  },
+  {
+   "task_key": "build_workbook",
+   "job_cluster_key": "npv_cluster_libreoffice",
+   "depends_on": [
+    {
+     "task_key": "forecast_vintages"
+    }
+   ],
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/build_workbook.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0
+  },
+  {
+   "task_key": "recalc_workbook",
+   "job_cluster_key": "npv_cluster_libreoffice",
+   "depends_on": [
+    {
+     "task_key": "build_workbook"
+    }
+   ],
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/recalc_workbook.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0
+  },
+  {
+   "task_key": "reconcile_excel",
+   "job_cluster_key": "npv_cluster_libreoffice",
+   "depends_on": [
+    {
+     "task_key": "recalc_workbook"
+    }
+   ],
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/05_reconcile_python_to_excel.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0
+  },
+  {
+   "task_key": "drift_monitoring",
+   "job_cluster_key": "npv_cluster",
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/12_drift_monitoring.py",
+    "source": "WORKSPACE"
+   },
+   "libraries": [
+    {
+     "requirements": "/Workspace/Repos/actuarial/npv_kit/deploy/requirements-databricks.txt"
+    }
+   ],
+   "timeout_seconds": 3600,
+   "max_retries": 0,
+   "depends_on": [
+    {
+     "task_key": "reconcile_excel"
+    }
+   ]
+  },
+  {
+   "task_key": "run_manifest",
+   "job_cluster_key": "npv_cluster",
+   "depends_on": [
+    {
+     "task_key": "drift_monitoring"
+    },
+    {
+     "task_key": "spark_experience_pipeline"
+    }
+   ],
+   "run_if": "ALL_DONE",
+   "spark_python_task": {
+    "python_file": "/Workspace/Repos/actuarial/npv_kit/code/python/08_run_manifest.py",
+    "source": "WORKSPACE"
+   },
+   "timeout_seconds": 600
+  }
+ ]
+}

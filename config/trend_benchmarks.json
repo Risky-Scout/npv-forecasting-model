@@ -1,0 +1,25 @@
+{
+  "_readme": "External trend benchmarks: the complement of credibility (ASOP 25 \u00a73.3) in the 03b blend, Indicated = Z x fit + (1 - Z) x benchmark, Z = benchmark_sd^2 / (benchmark_sd^2 + fit_se^2). v4.1: PUBLIC SOURCES replace the v4.0 placeholders (see source fields and docs/ASSUMPTION_BASIS.md). Policy: the shipped synthetic book is not relevant experience for a Humana block (ASOP 25 \u00a73.3), so the approved trends equal these benchmarks and the blend's indication on synthetic data is shown as a REVIEW item with a recorded disposition. When Humana experience is loaded, the same blend applies to it.",
+  "MEDSUPP": {
+    "series": "MEDSUPP_NORMALIZED",
+    "benchmark": 0.065,
+    "benchmark_sd": 0.015,
+    "source": "2026 Medicare Trustees Report (CMS OACT, 9 Jun 2026), Table II.D1, Part B 2026-2035: prices 2.0%, volume and intensity 4.4% -> per-enrollee pure trend 1.020 x 1.044 - 1 = 6.49%. https://www.cms.gov/oact/tr/2026 . SD 1.5 pt: published projections 6.3-6.8% (2025 report 6.8%) vs observed Med Supp claim trend ~11% since 2022 incl. aging/selection (CSG Actuarial)."
+  },
+  "DENTAL_VISION": {
+    "series": "DENTAL_VISION_NORMALIZED",
+    "benchmark": 0.035,
+    "benchmark_sd": 0.01,
+    "source": "ADA Health Policy Institute, National Dental Expenditures 2024 (private dental insurance +2.3% real); Segal industry dental benchmark 4.5%, Nevada PEBP adopted 3.5% (19 Mar 2026). Central 3.5%, SD 1.0 pt."
+  },
+  "MEDICAID": {
+    "series": "MEDICAID",
+    "benchmark": 0.045,
+    "benchmark_sd": 0.01,
+    "source": "CMS OACT NHE projections 2025-34 (24 Jun 2026): Medicaid spending +5.0%/yr, enrollment ~-0.3%/yr incl. mix/acuity; AHCCCS CYE2027 preliminary rate letter PMPM trend 3.0-4.0% plus separate acuity +1.0-1.5% (13 Aug 2026). Pure trend 4.5%, SD 1.0 pt (ASOP 49 \u00a73.2.9: no adjustments captured elsewhere)."
+  },
+  "rounding": 0.0005,
+  "tolerance": 0.0025,
+  "bootstrap_se_inflation": 1.16,
+  "_bootstrap_se_inflation_basis": "1 / 0.86: the lowest ratio of bootstrap SE to true sampling SD in the 30-seed estimator study (Med Supp normalized; docs/validation/trend_estimator_study.md). Conservative: lowers Z on noisy experience."
+}

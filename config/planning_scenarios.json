@@ -1,0 +1,120 @@
+{
+  "_readme": "Named planning scenarios run by 04_npv_engine.py (planning_scenarios()). Each applies several shocks at once, so results include interactions the one-at-a-time tornado cannot show. Shock types as in the tornado: add, mult, mult_list, set. 'ALL' shocks apply to every line that has the assumption. Illustrative definitions (J); in production Finance / FP&A supplies the planning scenarios so the actuarial forecast and the financial plan are stressed the same way. The first scenario must be the base.",
+  "scenarios": [
+    {
+      "name": "Base",
+      "description": "Approved assumptions",
+      "shocks": {}
+    },
+    {
+      "name": "Adverse cost environment",
+      "description": "Trend +1.5 pts all lines; Med Supp rate increases +0.5 pt (partial response); Medicaid rate update +0.5 pt (partial recognition)",
+      "shocks": {
+        "ALL": [
+          {
+            "key": "claim_trend",
+            "how": "add",
+            "value": 0.015
+          }
+        ],
+        "MEDSUPP": [
+          {
+            "key": "annual_rate_increase",
+            "how": "add",
+            "value": 0.005
+          }
+        ],
+        "MEDICAID": [
+          {
+            "key": "annual_rate_update",
+            "how": "add",
+            "value": 0.005
+          }
+        ]
+      }
+    },
+    {
+      "name": "Utilization spike (year-1 level)",
+      "description": "Claim-cost level +4% all years (a one-time step-up carried forward by trend), no rate response",
+      "shocks": {
+        "ALL": [
+          {
+            "key": "annual_claim_cost_year1_ultimate",
+            "how": "mult",
+            "value": 1.04
+          }
+        ],
+        "MEDICAID": [
+          {
+            "key": "medical_cost_ratio_year1",
+            "how": "add",
+            "value": 0.034
+          }
+        ]
+      }
+    },
+    {
+      "name": "State rate cut",
+      "description": "Medicaid rate update -1.5 pts and medical cost ratio +1 pt (rates certified below cost)",
+      "shocks": {
+        "MEDICAID": [
+          {
+            "key": "annual_rate_update",
+            "how": "add",
+            "value": -0.015
+          },
+          {
+            "key": "medical_cost_ratio_year1",
+            "how": "add",
+            "value": 0.01
+          }
+        ]
+      }
+    },
+    {
+      "name": "Persistency shift",
+      "description": "Lapse x1.25 Med Supp and D&V (competitive market); Medicaid churn x1.2 (redetermination wave)",
+      "shocks": {
+        "MEDSUPP": [
+          {
+            "key": "lapse_by_duration",
+            "how": "mult_list",
+            "value": 1.25
+          }
+        ],
+        "DENTAL_VISION": [
+          {
+            "key": "lapse_by_duration",
+            "how": "mult_list",
+            "value": 1.25
+          }
+        ],
+        "MEDICAID": [
+          {
+            "key": "annual_disenrollment",
+            "how": "mult",
+            "value": 1.2
+          }
+        ]
+      }
+    },
+    {
+      "name": "Higher rates environment",
+      "description": "Hurdle rate +1 pt and investment earned rate +1 pt (a higher-rate environment moves both)",
+      "shocks": {
+        "ALL": [
+          {
+            "key": "discount_rate",
+            "how": "add",
+            "value": 0.01
+          },
+          {
+            "key": "profit_test.investment_earned_rate",
+            "how": "add",
+            "value": 0.01
+          }
+        ]
+      }
+    }
+  ]
+}

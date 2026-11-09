@@ -1,0 +1,66 @@
+{
+  "_readme": "Data-quality policy. Every BLOCKER either has an approved cleaning rule (applied in the silver layer, and only within its tolerance) or must be zero. A blocker that is neither cleaned within tolerance nor covered by an unexpired exception in dq_exceptions.json fails the run. WARN and INFO findings are logged for review and never stop the run. Thresholds live here, not in SQL, so a change is reviewed and versioned.",
+  "checks": {
+    "claims_without_eligibility": {
+      "severity": "BLOCKER",
+      "cleaning_rule": "Dropped in silver by an inner join to eligibility; dollars removed are reported and reconciled.",
+      "tolerance": {
+        "metric": "share_of_paid",
+        "max": 0.01
+      }
+    },
+    "duplicate_member_months": {
+      "severity": "BLOCKER",
+      "cleaning_rule": "De-duplicated in silver to one row per member-month.",
+      "tolerance": {
+        "metric": "share_of_rows",
+        "max": 0.001
+      }
+    },
+    "missing_eligibility_month": {
+      "severity": "BLOCKER",
+      "cleaning_rule": null
+    },
+    "paid_before_incurred": {
+      "severity": "BLOCKER",
+      "cleaning_rule": null
+    },
+    "null_key_fields": {
+      "severity": "BLOCKER",
+      "cleaning_rule": null
+    },
+    "large_claims": {
+      "severity": "WARN",
+      "cleaning_rule": "Capped at the line's pooling point (config/experience_parameters.json) in silver; the excess is reported as a pooling charge in the assumption indications, to be added back when an all-in claim cost is set from pooled experience.",
+      "threshold_by_lob": {
+        "MEDSUPP": 50000,
+        "DENTAL_VISION": 10000,
+        "MEDICAID": 500000
+      }
+    },
+    "eligibility_outside_enrollment": {
+      "severity": "WARN",
+      "cleaning_rule": null
+    },
+    "membership_drop": {
+      "severity": "WARN",
+      "cleaning_rule": null,
+      "max_drop_vs_prior": 0.4
+    },
+    "claim_reversals": {
+      "severity": "INFO",
+      "cleaning_rule": "Kept; netted against originals within the incurred month."
+    }
+  },
+  "sql01_check_names": {
+    "Claims with no eligibility": "claims_without_eligibility",
+    "Duplicate member-months": "duplicate_member_months",
+    "Missing eligibility month": "missing_eligibility_month",
+    "Paid before incurred": "paid_before_incurred",
+    "Null key fields": "null_key_fields",
+    "Large / outlier claims": "large_claims",
+    "Eligibility outside enrollment": "eligibility_outside_enrollment",
+    "Membership drop > 40% MoM": "membership_drop",
+    "Claim reversals (negative)": "claim_reversals"
+  }
+}
