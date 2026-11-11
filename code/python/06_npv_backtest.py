@@ -512,7 +512,11 @@ for lob, est in [("MEDSUPP", est_ms), ("DENTAL_VISION", est_dv)]:
                           estimated=float(tf["DENTAL_VISION"]), npv_true=base, npv_with_estimate=v_, npv_error=v_ - base))
 B_res = pd.DataFrame(rowsB)
 print("\nTEST B: NPV error from estimating assumptions from 4 years of experience")
-print(B_res[["lob", "assumption", "true", "estimated", "npv_true", "npv_with_estimate", "npv_error"]].to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 1 else f"{x:,.0f}"))
+_fmt_list = lambda v: "[" + ", ".join(f"{float(x):.4f}" for x in v) + "]" if isinstance(v, (list, tuple)) else v
+_B_print = B_res.copy()
+for _c in ("true", "estimated"):
+    _B_print[_c] = _B_print[_c].map(_fmt_list)
+print(_B_print[["lob", "assumption", "true", "estimated", "npv_true", "npv_with_estimate", "npv_error"]].to_string(na_rep="n/a", index=False, float_format=lambda x: f"{x:,.4f}" if abs(x) < 1 else f"{x:,.0f}"))
 
 # ----------------------------------------------------------------------------
 # TEST C: process risk vs parameter risk

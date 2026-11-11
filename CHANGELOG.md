@@ -2,6 +2,20 @@
 
 All figures are on the synthetic practice book. From 4.1.0 the assumptions rest on public sources, statute and documented judgment; earlier versions used illustrative values.
 
+## 4.2.1 — display and documentation (model version 4.2.0 unchanged)
+
+No figure, assumption or approval changed: the model version stays 4.2.0, the assumption set
+stays AS-SYN-2026-009 (same hash), and every result reproduces to the dollar.
+
+- `show_results.py`: checks that `make quick` doesn't run now say `not part of make quick: run
+  make run (about 15 min)` instead of `SKIPPED`.
+- Med Supp cell pricing: a market check against a single public reference now says so
+  (`outside the single public reference 0.18`), instead of printing a one-point range as `0.18-0.18`.
+- Backtest Test B prints lapse rates to four decimals (the CSV keeps full precision).
+- README: notes on the HDG flag, the Spark pandas warning and the `make quick` summary; a new
+  **Known limitations of this build** section (trend estimation error, the no-credibility rule
+  and the D&V lapse curve, the unexplained part of the 2025 Medicaid A/E).
+
 ## 4.2.0 — risk-based pricing solve
 
 **Why this release exists.** v4.1 valued the products as priced. A model Humana deploys must also

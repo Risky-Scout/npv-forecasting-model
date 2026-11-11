@@ -1584,7 +1584,8 @@ def pricing_solve() -> tuple[pd.DataFrame, pd.DataFrame]:
         lo, hi = pr[r.plan]
         msg = []
         if not (lo - 1e-6 <= rel <= hi + 1e-6):
-            msg.append(f"REVIEW: plan relativity {rel:.3f} outside public {lo:g}-{hi:g}")
+            ref = f"the single public reference {lo:g}" if abs(hi - lo) < 1e-9 else f"public {lo:g}-{hi:g}"
+            msg.append(f"REVIEW: plan relativity {rel:.3f} outside {ref}")
         if r.plan == "G" and ages[r.band] > 65:
             step = (gb / g65) ** (1 / (ages[r.band] - 65)) - 1
             if not (ar[0] - 1e-6 <= step <= ar[1] + 1e-6):

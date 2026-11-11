@@ -97,7 +97,10 @@ for name, label in [("e2e_excel_nonneutral.py", "Excel = Python, non-neutral con
                     ("06_npv_backtest.py", "Backtest, Tests A-C"),
                     ("run_tests.py", "Automated test suite"),
                     ("e2e_databricks_job_local.py", "Databricks job, 17 tasks run locally")]:
-    print(f"  {label + ':':<45}{steps.get(name, 'not run')}")
+    status_ = steps.get(name, "not run")
+    if status_ in ("SKIPPED", "not run"):
+        status_ = "not part of make quick: run make run (about 15 min)"
+    print(f"  {label + ':':<45}{status_}")
 alerts = (manifest.get("monitoring") or {}).get("alerts")
 print(f"  {'Drift monitor alerts:':<45}{alerts} " + ("(all intended; see README, section: What you'll see in the log)" if approved
       else "(the approved base run has 5; the difference comes from the edited assumptions)"))

@@ -80,6 +80,13 @@ the run still ends with `All steps completed.`:
   −2.4%, and only persistent bias becomes a REVIEW item.
 - Five drift ALERTs: three Medicaid terminations (the redetermination wave) and two lines whose
   base DE NPV is below break-even (D&V and Medicaid).
+- Med Supp High-Deductible G cells flagged `outside the single public reference 0.18`: the only
+  public HDG relativity is one carrier's, so any repriced HDG cell is flagged for a market check.
+- Spark prints WARN lines and a `FutureWarning` that PySpark doesn't yet fully support pandas 3.
+  These are startup messages; the Spark run still ties to the engine to the cent.
+- After `make quick`, the summary lists the Excel tie-outs at the contract variants and the
+  recommended prices, the test suite and the local Databricks job as `not part of make quick`.
+  `make run` runs all of them (about 15 minutes).
 
 The data generator uses a fixed seed, so every run reproduces the figures below to the dollar.
 
@@ -225,6 +232,25 @@ synthetic generator are listed. A test fails if any value drifts from the regist
 - A dry run of the Databricks job in a non-production workspace.
 
 The go-live checklist with owners is in [docs/RUNBOOK.md](docs/RUNBOOK.md) §2.
+
+**Known limitations of this build**, stated here rather than left to be found:
+
+- **Four years of one block can't pin trend precisely.** Because the data is synthetic, the
+  estimators can be graded against the true trend: normalized Med Supp trend fits 6.82% against
+  a true 6.00% (about 2.3 standard errors), D&V 4.35% against 3.50%, Medicaid 4.74% against
+  5.50%. Backtest Test B prices it: pricing Med Supp on the fitted trend would understate NPV by
+  $434,213. The approved public trend (6.5%) is closer but still conservative, understating NPV
+  by $261,650 against the truth. This is why pricing trend comes from public benchmarks with
+  credibility, and the estimators are not tuned toward the known answer.
+- **One rule, applied consistently: synthetic experience gets no credibility.** So the approved
+  set keeps the public flat 30% D&V lapse even though the practice book shows 36% / 22% / 17% by
+  duration (flagged REVIEW and dispositioned). On Humana data the duration curve would replace
+  it through the credibility blend; it is the first assumption study to run.
+- **The 2025 Medicaid actual-to-expected miss is not fully explained.** Claims came in 5.1% over
+  the forecast (margin variance −$841,519). The waterfall isolates the Kentucky feed drop as
+  volume and large claims as $177,560 below the pooling charge; the remaining $1,059,633 of
+  "trend and morbidity" is the residual by construction. Explaining it needs claims detail by
+  service category that the practice book doesn't carry.
 
 **The in-force forecast and the pricing basis disagree on purpose.** The forecast projects the
 existing (synthetic) book on that book's own experience; new-business pricing gives that
