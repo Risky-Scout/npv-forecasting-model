@@ -1,4 +1,4 @@
-# NPV Forecasting Model v4.2 — Executive summary
+# NPV Forecasting Model v4.3 — Executive summary
 
 **What it is.** A working forecasting and valuation model for three Humana lines: Medicare
 Supplement, individual Dental & Vision, and Medicaid managed care. It does the two jobs an
@@ -11,7 +11,7 @@ Analytics/Forecasting actuary does:
 **What it is not.** It uses no Humana data and no Humana assumptions. The data is a synthetic
 practice book with planted data problems. Every NPV assumption comes from public sources, statute or
 documented judgment, chosen under the ASOPs (25, 8, 49, 23, 56, 41, 58). No pricing assumption
-takes credibility from the synthetic experience. The 18 values that are linked to it (sales-mix placeholders, and
+takes credibility from the synthetic experience. The 17 values that are linked to it (sales-mix placeholders, and
 values equal to the generator's own that a public figure or judgment range supports) are listed
 openly. It is built so that on
 day one at Humana the same pipeline runs on Humana extracts and Humana experience takes
@@ -28,11 +28,11 @@ relaxed.
 |---|---|---|---|---|
 | Med Supp, Plan G at 65 (per 1,000) | $411,854, 3.0% | Good | **Keep the price.** The cell meets the target with 1.5% headroom, provided rate filings keep responding to emerging claims (24.7% with no response) | $411,854, 3.0% |
 | Med Supp portfolio (age × plan mix) | $119,341, 28.0% | Good, but fails the risk target as priced | **Reprice Plan N +2% to +8% and older-age Plan G +1% to +7%.** High-Deductible G can't reach the base cell's margin inside the 65% minimum loss ratio | $382,991, 3.1% |
-| Dental & Vision (per 1,000) | −$40,686, 99.8% | Bad as priced | **Raise the premium 8.0%**, $39.00 → $42.11 a month | $21,335, 9.8% |
-| Medicaid new-state contract (10,000 members) | −$1,089,199, 57.0% | Bad | **Do not bid at these terms.** Capitation is state-set, and the cost ratio or admin needed lies outside every public range. Churn by rate cell would improve this but would not, alone, meet the target | — |
+| Dental & Vision (per 1,000) | −$33,612, 98.6% | Bad as priced | **Raise the premium 7.1%**, $39.00 → $41.78 a month | $22,332, 9.9% |
+| Medicaid new-state contract (10,000 members) | +$2,711,443, 47.2% | Thin: positive, but close to a coin flip | **Do not bid at these terms.** Capitation is state-set, and the cost ratio or admin needed to meet the target lies outside every public range. The positive DE rests on MACPAC churn by rate cell; at equal churn it is −$1,089,199, so the state data book comes first | — |
 
 At the recommended premiums, the independent Excel model reproduces the Python NPVs to the cent.
-Two prices are flagged for market review: D&V is 8% above its one public reference, and the
+Two prices are flagged for market review: D&V is 7.1% above its one public reference, and the
 High-Deductible G relativity is above the one public carrier. On public assumptions these
 recommendations demonstrate the method; on Humana's approved assumptions and pricing policy, the
 same solve is the pricing recommendation.
@@ -44,8 +44,8 @@ Three findings a pricing or forecasting lead would act on:
    kit normalizes the experience, uses a member-level bootstrap and blends with a public
    benchmark by credibility.
 2. **Cash NPV is not the decision measure.** After claim lag, investment income, capital, tax
-   and the IRC §848 DAC tax, Med Supp DE is 40% below cash. Medicaid goes from positive to
-   negative.
+   and the IRC §848 DAC tax, Med Supp DE is 40% below cash and Medicaid DE is 52% below cash.
+   Medicaid's MLR floor takes the Monte Carlo mean DE down to $0.12M.
 3. **Management action belongs in the risk measure.** With no filing response, Med Supp
    P(cash NPV < 0) is 18.6%; with filings that close half the visible gap each year it is 0.6%.
    The response strength is judgment, so the kit shows the range (0.15% to 18.6%).
@@ -90,9 +90,10 @@ These boundaries are stated, not hidden. Each has a mitigation and a named owner
 checklist (RUNBOOK §2):
 - Humana experience and pricing trends to replace the public complements, through the same
   credibility blend.
-- 41 judgment values (lapse shock, select factors, anti-selection, expenses, Medicaid start-up,
-  renewal and churn by cell, Monte Carlo calibration). Each is run across its range. Medicaid DE
-  changes sign within four of them; D&V stays negative and Med Supp positive across all of them.
+- 40 judgment values (lapse shock, select factors, anti-selection, expenses, Medicaid start-up,
+  renewal, Monte Carlo calibration). Each is run across its range. Medicaid DE changes sign
+  within three swept ranges (start-up, risk-adjustment capture, equal churn by cell), D&V within
+  one (pent-up 1.10); Med Supp stays positive across all of them.
 - Corporate Tax confirmation of the §848 classification. Valuation and capital inputs for a
   statutory-grade profit test.
 - A dry run of the Databricks job in a Humana non-production workspace.

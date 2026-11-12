@@ -71,10 +71,10 @@ go-live checklist (§2):
 - Trend benchmarks are public national sources, not Humana pricing trends. Until Humana
   experience is loaded, the trend indications demonstrate the method; they are not a Humana view
   of trend (item 11).
-- 41 assumptions are judgment, including anti-selection, the dynamic lapse slope, risk-adjustment
-  capture, Medicaid churn by rate cell, Monte Carlo correlations, process risk and the
+- 40 assumptions are judgment, including anti-selection, the dynamic lapse slope, risk-adjustment
+  capture, Medicaid loss-ratio relativities by rate cell, Monte Carlo correlations, process risk and the
   filing-response strength. Each is run across its range; calibrate on Humana data (items 12–14).
-- 18 values are linked to the synthetic book (ASSUMPTION_BASIS.md): replace the placeholders with
+- 17 values are linked to the synthetic book (ASSUMPTION_BASIS.md): replace the placeholders with
   the Humana sales plan and state data book, and confirm the generator-equal values against
   Humana studies (items 5, 11–13).
 - Profit-test simplifications (MODEL_DOCUMENTATION.md §8) and the DAC tax classification need

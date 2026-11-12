@@ -147,11 +147,16 @@ def test_rate_cells_blend_to_contract_level_assumptions():
     _, s, cap, med, chn = eng.medicaid_cells(A["MEDICAID"], G)
     assert abs((s * cap).sum() - 1) < 1e-12 and abs((s * cap * med).sum() - 1) < 1e-12 and abs((s * chn).sum() - 1) < 1e-12
     # Revenue booked in month 1 is the blended capitation net of the quality withhold (v4.1: 2% public
-    # basis); the expected earn-back is received after the contract year, not in month 1.
-    p = eng.project_medicaid(A["MEDICAID"], G)
+    # basis); the expected earn-back is received after the contract year, not in month 1. Checked at
+    # equal churn by cell: with MACPAC churn by cell (the v4.3 base) the mix already drifts toward the
+    # low-churn, high-capitation ABD cell within month 1 (test_rate_cells_mix_drift_when_churn_differs).
+    a0 = copy.deepcopy(A["MEDICAID"]); a0["rate_cells"]["disenrollment_relativity"] = [1.0, 1.0, 1.0]
+    p = eng.project_medicaid(a0, G)
     w = A["MEDICAID"]["contract_terms"]["quality_withhold"]["withhold_pct"]
     assert p["revenue"][0] / p["member_months"][0] == pytest.approx(A["MEDICAID"]["capitation_pmpm_year1"] * (1 - w), rel=1e-9)
-    a = copy.deepcopy(A["MEDICAID"]); a["contract_terms"]["quality_withhold"]["withhold_pct"] = 0.0
+    p = eng.project_medicaid(A["MEDICAID"], G)                    # MACPAC churn: month 1 tilts toward ABD
+    assert p["revenue"][0] / p["member_months"][0] > A["MEDICAID"]["capitation_pmpm_year1"] * (1 - w)
+    a = copy.deepcopy(a0); a["contract_terms"]["quality_withhold"]["withhold_pct"] = 0.0
     p = eng.project_medicaid(a, G)                               # no withhold: exactly the contract capitation
     assert p["revenue"][0] / p["member_months"][0] == pytest.approx(A["MEDICAID"]["capitation_pmpm_year1"], rel=1e-9)
 

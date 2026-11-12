@@ -17,7 +17,8 @@ Two results per line:
 
 History
     Version 1 (archive/v1_annual_npv_engine.py): annual, mid-year conventions. The backtest
-      found it biased (Medicaid -12%: new members never churned in their first year).
+      found it biased on Medicaid (new members never churned in their first year; Test A in
+      06_npv_backtest.py reports the size).
     Version 2 (archive/v2_monthly_npv_engine.py): monthly, with the real contract mechanics.
       Backtest unbiased on all three lines.
     Version 3 (this file) adds, each behind a switch in npv_assumptions.json -> global.features:
@@ -1275,7 +1276,7 @@ JUDGMENT_RANGES = [
     ("DENTAL_VISION", "Renewal commission 5% / 10%", "renewal_commission", "set", 0.05, 0.10),
     ("DENTAL_VISION", "DAC tax classification 0% / 9.2% (if guaranteed renewable)", "profit_test.dac_tax_rate_by_line.DENTAL_VISION", "set", 0.0, 0.092),
     ("MEDICAID", "Contract term 3 / 7 years", "contract_term_years", "set", 3, 7),
-    ("MEDICAID", "Churn by cell: equal (base) / MACPAC relative 19:28:9, scaled to the 25% blend", "rate_cells.disenrollment_relativity", "set", [1.0, 1.0, 1.0], [0.19, 0.28, 0.09]),
+    ("MEDICAID", "Churn by cell: equal / MACPAC relative 19:28:9 (base), scaled to the 25% blend", "rate_cells.disenrollment_relativity", "set", [1.0, 1.0, 1.0], [0.9048, 1.3333, 0.4286]),
     # Cell mix and loss-ratio relativities are normalized to the contract-level year-1 values, so at
     # equal churn by cell they cannot move the result; they are swept at MACPAC churn by cell, where
     # the mix drifts, and their base is that same case.
@@ -1284,10 +1285,10 @@ JUDGMENT_RANGES = [
     ("MEDICAID", "Acuity path after redeterminations: none / 1.00, 1.04, 1.03 (RA lag 1 year)", "contract_terms.acuity_shift.medical_factor_by_year", "set", [], [1.0, 1.04, 1.03]),
     ("MEDSUPP", "Dynamic lapse slope 0.25 / 1.0 (at a filed increase 2 pt above 7.3%)", "dynamic_shock_lapse.shock_lapse_per_unit_rate_increase", "set_at_rate_plus_2pt", 0.25, 1.0),
 ]
-MACPAC_CHURN_REL = (0.19, 0.28, 0.09)     # MACPAC churn by eligibility group (child, adult, disabled)
+MACPAC_CHURN_REL = (0.9048, 1.3333, 0.4286)   # MACPAC churn by group 19/28/9% over the all-enrollee 21% (v4.3 base)
 # The dynamic-lapse slope has no effect when the filed increase equals the reference (the base by
 # construction), so it is swept at a filed increase 2 pt above the reference, and its base is the
-# same +2 pt case. Category shares, model-point mix and the Medicaid churn / loss-ratio relativities
+# same +2 pt case. Category shares, model-point mix and the Medicaid loss-ratio relativities
 # at 1.0 have no effect on the base results; the per-cell tables and these rows show where they would.
 
 
@@ -1531,8 +1532,8 @@ def pricing_solve() -> tuple[pd.DataFrame, pd.DataFrame]:
                      de_npv_recommended=d0["de_npv"], cash_npv_recommended=d0["cash_npv"],
                      status=("BID: a lever inside public ranges meets the target" if any_ok else
                              "DO NOT BID AT THESE TERMS: no single lever inside public ranges meets the risk target"),
-                     note="Capitation is state-set; negotiate terms, reduce capital need, or decline. Churn by rate cell (MACPAC) "
-                          "materially improves the economics: confirm with the state data book before deciding."))
+                     note="Capitation is state-set; negotiate terms, reduce capital need, or decline. The base uses MACPAC churn by rate cell; "
+                          "equal churn by cell (swept) is materially worse: confirm the churn pattern with the state data book."))
     lines = pd.DataFrame(rows)
 
     # ---- Med Supp model points priced to the base cell's DE margin at the recommended premium

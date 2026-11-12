@@ -132,6 +132,25 @@
         "DENTAL_VISION.lapse_by_duration[2]": "As duration 1.",
         "DENTAL_VISION.lapse_by_duration[3+]": "As duration 1."
       }
+    },
+    {
+      "id": "AS-SYN-2026-010",
+      "sha256": "5c49a0f0bb4f36402b329200a86ae4bfb7d41ee1c63970aff194e74b4e666993",
+      "model_version": "4.3.0",
+      "approved_by": "Responsible actuary (synthetic example)",
+      "approved_on": "2026-11-12",
+      "scope": "Synthetic practice book: model validation and demonstration only. Not for pricing or reporting.",
+      "notes": "Model version 4.3.0. Supersedes AS-SYN-2026-009. Two assumption values changed, both consistency corrections: (1) D&V annual rate increase 3.0% -> 3.5%, equal to the 3.5% claim trend. At 3.0% against a 3.5% trend the margin eroded by design every year; the 2013 SLICA memo it came from filed 3% against its own 3% trend, so the source supports increases at trend. (2) Medicaid disenrollment relativity by rate cell 1.0 / 1.0 / 1.0 -> MACPAC 12-month churn by eligibility group 19% / 28% / 9% (children, adults, disabled), normalized to the 25% blend. Equal churn was a parsimony judgment against available public data, and it was material. (3) config/forecast_config.json: the in-force D&V forecast reads the book's rate action off its own latest January premium step (3.0%), as Medicaid already does, so the new-business 3.5% does not leak into the existing book's forecast or the A/E vintages. Med Supp premium age step stays 3.0%: it is the existing book's filed attained-age table and inside the public 2.7-3.5% range; that older issue ages are underpriced against the 3.8% claim slope is a pricing finding, handled by the per-cell pricing solve, not an assumption error.",
+      "review_dispositions": {
+        "MEDSUPP.claim_trend": "Keep 6.5% (2026 Trustees Part B per-enrollee pure trend). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. Re-blend when Humana experience is loaded.",
+        "DENTAL_VISION.claim_trend": "Keep 3.5% (ADA HPI / Segal). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. ",
+        "DENTAL_VISION.lapse_by_duration[1]": "Keep 30% (filed individual dental memoranda, public). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. The in-force forecast of the existing book uses the book's own lapse experience.",
+        "DENTAL_VISION.lapse_by_duration[2]": "As duration 1.",
+        "DENTAL_VISION.lapse_by_duration[3+]": "As duration 1.",
+        "MEDICAID.rate_cells.disenrollment_relativity[CHILD]": "Keep the MACPAC churn relativity (0.905 / 1.333 / 0.429). The synthetic practice book shows no credible churn difference by cell, but it is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0, as for trend and lapse. Replace with the state data book.",
+        "MEDICAID.rate_cells.disenrollment_relativity[ADULT]": "As CHILD.",
+        "MEDICAID.rate_cells.disenrollment_relativity[ABD]": "As CHILD."
+      }
     }
   ]
 }

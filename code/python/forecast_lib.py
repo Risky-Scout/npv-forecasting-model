@@ -436,9 +436,15 @@ def line_params(lob: str, book: Book, cfg: dict, comp: pd.DataFrame, overrides: 
                  plan_rel=dict(curves["plan_relativity"]), premium_age_step=a["premium_age_step"],
                  rate_action=a["annual_rate_increase"], rate_action_source="approved annual_rate_increase")
     elif lob == "DENTAL_VISION":
+        # v4.3: the existing book's rate action is read off its own January premium step when the config
+        # says "inferred" (as Medicaid). The approved annual_rate_increase prices NEW business; the in-force
+        # forecast and the A/E vintages project the book's own filing history.
+        inf = infer_rate_actions(book, cfg).get("DENTAL_VISION") if cfg["rate_actions"]["DENTAL_VISION"]["source"] == "inferred" else None
         p.update(trend=a["claim_trend"], trend_source="approved assumption", lapse=list(book_lapse), lapse_source=lapse_src,
-                 pent_up=a["first_year_pent_up_factor"], rate_action=a["annual_rate_increase"],
-                 rate_action_source="approved annual_rate_increase", premium_age_step=0.0)
+                 pent_up=a["first_year_pent_up_factor"],
+                 rate_action=(inf["rate_action"] if inf else a["annual_rate_increase"]),
+                 rate_action_source=(f"inferred from the {inf['january']} premium step" if inf else "approved annual_rate_increase"),
+                 premium_age_step=0.0)
     else:
         mb = _book_medicaid(book, cfg, comp)
         inf = infer_rate_actions(book, cfg).get("MEDICAID")

@@ -46,7 +46,7 @@
   },
   {
    "key": "global.model_version",
-   "value": "4.2.0",
+   "value": "4.3.0",
    "status": "M",
    "basis": "Model version tag (approvals are tied to it).",
    "sources": [],
@@ -772,9 +772,9 @@
   },
   {
    "key": "DENTAL_VISION.annual_rate_increase",
-   "value": 0.03,
-   "status": "P",
-   "basis": "3%: filed dental trend 3% (SLICA 2013 memo); a 2026 individual dental filing (Anthem CA) took no increase. Low confidence.",
+   "value": 0.035,
+   "status": "D",
+   "basis": "3.5%: set equal to the claim trend (v4.3), so filed increases hold the loss ratio level rather than erode the margin every year. The 2013 SLICA memo filed 3% against its own 3% trend: the source supports increases at trend, not 3% against a 3.5% trend. A 2026 individual dental filing (Anthem CA) took no increase, the downside test.",
    "sources": [
     {
      "title": "DC DISB public dental actuarial memoranda (Security Life of America; Starmount)",
@@ -787,8 +787,7 @@
     "ASOP 8 \u00a73.4 (trend, morbidity, lapse assumptions for health benefits)",
     "ASOP 56 \u00a73.6.1 (sensitivity testing of key assumptions)"
    ],
-   "sensitivity": "0%-5%",
-   "synthetic_link": "equals_generator"
+   "sensitivity": "0%-5%"
   },
   {
    "key": "DENTAL_VISION.annual_claim_cost_year1_ultimate",
@@ -1367,12 +1366,12 @@
   {
    "key": "MEDICAID.rate_cells.disenrollment_relativity",
    "value": [
-    1.0,
-    1.0,
-    1.0
+    0.9048,
+    1.3333,
+    0.4286
    ],
-   "status": "J",
-   "basis": "1.0 for parsimony; MACPAC shows lower churn for disabled (9%) than adults (28%), a refinement for the state data. Material: at MACPAC churn by cell the mix drifts toward high-capitation ABD members and DE NPV turns positive (swept).",
+   "status": "P",
+   "basis": "MACPAC 12-month churn by eligibility group, children 19%, MAGI adults 28%, disabled 9%, each divided by the all-enrollee 21%: 0.905 / 1.333 / 0.429 (v4.3; was 1.0 for parsimony). The engine normalizes so the blended rate stays 25%. Material: high-capitation ABD members stay longer, so the mix drifts toward them. Replace with the state data book.",
    "sources": [
     {
      "title": "MACPAC: An updated look at rates of churn in Medicaid and CHIP",
@@ -1384,7 +1383,7 @@
    "asop": [
     "ASOP 41 (disclose judgment assumptions and reliance on others)"
    ],
-   "sensitivity": "MACPAC cell churn 19% / 28% / 9% (swept)"
+   "sensitivity": "equal churn by cell (swept)"
   },
   {
    "key": "MEDICAID.risk_adjustment.plan_acuity",

@@ -3,7 +3,7 @@
  "global": {
   "discount_rate": 0.085,
   "expense_inflation": 0.03,
-  "model_version": "4.2.0",
+  "model_version": "4.3.0",
   "features": {
    "_readme": "Model features. Setting every v3 flag to false reproduces version 2 exactly; the v4 flags (medicaid_contract_terms, dv_benefit_categories, mc_process_risk, mc_management_response) are each neutral at their neutral settings and are tested to reproduce v3 (tests/test_v4_model.py). The shipped Medicaid contract terms are not all neutral (2% quality withhold, v4.1).",
    "antiselective_shock_lapse": true,
@@ -141,7 +141,7 @@
   "projection_years": 10,
   "cohort_size": 1000,
   "annual_premium_year1": 468.0,
-  "annual_rate_increase": 0.03,
+  "annual_rate_increase": 0.035,
   "annual_claim_cost_year1_ultimate": 330.0,
   "claim_trend": 0.035,
   "first_year_pent_up_factor": 1.28,
@@ -219,7 +219,7 @@
   "admin_pmpm_year1": 40.0,
   "startup_cost_year1": 6000000.0,
   "rate_cells": {
-   "_readme": "Rate cells for the new state. Shares are the starting and joiner membership mix. Each cell's capitation = blended capitation x capitation_relativity; each cell's medical cost = its capitation x the blended medical cost ratio x loss_ratio_relativity (a LOSS-RATIO relativity, not a cost relativity: a state data book's cost relativity must be divided by the cell's capitation relativity before it is entered here). The engine normalizes so the blended year-1 capitation, medical cost ratio and disenrollment equal the contract-level assumptions above (the levers the tornado and Monte Carlo shock). Capitation relativities: consistent with MACPAC per-enrollee spending by eligibility group (public). Member mix: READ OFF the synthetic book as a placeholder for the state data book (disclosed in docs/ASSUMPTION_BASIS.md); with normalized relativities and equal churn by cell it has no effect on the results (swept against the MACPAC national mix). Loss-ratio and disenrollment relativities are 1.0 (judgment, swept: MACPAC churn by cell is material). In production they come from the state's rate certification and data book.",
+   "_readme": "Rate cells for the new state. Shares are the starting and joiner membership mix. Each cell's capitation = blended capitation x capitation_relativity; each cell's medical cost = its capitation x the blended medical cost ratio x loss_ratio_relativity (a LOSS-RATIO relativity, not a cost relativity: a state data book's cost relativity must be divided by the cell's capitation relativity before it is entered here). The engine normalizes so the blended year-1 capitation, medical cost ratio and disenrollment equal the contract-level assumptions above (the levers the tornado and Monte Carlo shock). Capitation relativities: consistent with MACPAC per-enrollee spending by eligibility group (public). Member mix: READ OFF the synthetic book as a placeholder for the state data book (disclosed in docs/ASSUMPTION_BASIS.md); with churn differing by cell the mix matters (swept against the MACPAC national mix). Loss-ratio relativities are 1.0 (judgment, swept). Disenrollment relativities are MACPAC's 12-month churn by eligibility group, children 19%, adults 28%, disabled 9%, each divided by MACPAC's all-enrollee 21% (public, v4.3); the engine normalizes them to the 25% blend; equal churn by cell is swept as the alternative. In production they come from the state's rate certification and data book.",
    "cells": [
     "CHILD",
     "ADULT",
@@ -241,9 +241,9 @@
     1.0
    ],
    "disenrollment_relativity": [
-    1.0,
-    1.0,
-    1.0
+    0.9048,
+    1.3333,
+    0.4286
    ]
   },
   "risk_adjustment": {

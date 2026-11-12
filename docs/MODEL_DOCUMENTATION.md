@@ -1,4 +1,4 @@
-# NPV Forecasting Model v4.2.0 — Model Documentation
+# NPV Forecasting Model v4.3.0 — Model Documentation
 
 Prepared in the spirit of ASOP No. 56 (Modeling), No. 41 (Actuarial Communications), No. 23 (Data
 Quality) and No. 25 (Credibility Procedures). All results quoted are on a synthetic practice book
@@ -215,10 +215,11 @@ End-of-month accounting, defined in `04_npv_engine.py`, `profit_test()`.
     the reference it has no effect by construction.
   - Payment patterns are shifted one month faster or slower.
   - The D&V DAC classification is swept at 0% / 9.2%.
-  - Medicaid churn by cell is swept at MACPAC's relative churn (19 : 28 : 9, scaled to the 25%
-    blend: about 22.6% / 33.3% / 10.7%). This is material: DE turns positive as the mix drifts
+  - Medicaid churn by cell is MACPAC's relative churn in the v4.3 base (19 : 28 : 9, scaled to
+    the 25% blend: about 22.6% / 33.3% / 10.7%) and is swept against equal churn. This is
+    material: at equal churn DE is −$1.09M against +$2.71M at the base, because the mix drifts
     toward ABD members with admin at a flat PMPM. The cell-mix and ABD loss-ratio sweeps run at
-    that churn, because at equal churn the normalization makes them inert.
+    MACPAC churn, because at equal churn the normalization makes them inert.
 - **Monte Carlo parameter sensitivity (v4.1):** every volatility (the four level-shift SDs and
   the three process-risk SDs), the AR(1) φ and the trend / Medicaid update correlation, nine
   parameters, at the ends of their ranges
@@ -376,8 +377,8 @@ still reports its indications, and the approval records the disposition.
 - **4 are read off the synthetic book** as placeholders for Humana inputs: the Med Supp
   model-point mix and issue ages, the D&V category cost shares and the Medicaid cell mix. None
   affects the headline results. The mix affects only the portfolio, the category shares only the
-  waiting-period options, and the Medicaid mix nothing at equal churn by cell (swept).
-- **14 equal the generator's own values.** They are kept because a public figure (7) or a
+  waiting-period options, and the Medicaid mix the Medicaid result (churn differs by cell; swept against the MACPAC national mix).
+- **13 equal the generator's own values.** They are kept because a public figure (6) or a
   judgment range (7) supports them, so for them the source is a reasonableness check, not the
   derivation.
 
@@ -409,6 +410,7 @@ the filing-response attribution and the per-cell model-point table), model setti
 | D&V trend | 3.5% | P | ADA HPI; Segal 3.5–4.5% |
 | D&V premium / claims / maintenance | $468 / $330 / $50 | P | EMI filing; Milliman for NADP loss ratio and admin |
 | D&V lapse | 30% flat | P | Filed individual dental actuarial memoranda (low confidence, 2013) |
+| D&V rate increase | 3.5% | D | Equal to the claim trend (v4.3): the 2013 memo filed 3% against its own 3% trend |
 | D&V pent-up, commission, acquisition | as filed | J | No public basis |
 | Medicaid capitation | $510 PMPM | P | Louisiana SFY2025 $510.09 (excl. directed payments) |
 | Medicaid trend = rate update | 4.5% | P / D | AHCCCS CYE2027 3–4% + acuity; NHE +5.0%; ASOP 49 §2.1 |
@@ -417,6 +419,7 @@ the filing-response attribution and the per-cell model-point table), model setti
 | Medicaid MLR floor | 85% | S | 42 CFR 438.8 |
 | Medicaid churn | 25% | J (public anchor) | MACPAC 21% (2018), judgment uplift for redeterminations |
 | Medicaid cell relativities | 0.575 / 0.946 / 3.042 | P | MACPAC MACStats FY2023 |
+| Medicaid churn relativities by cell | 0.905 / 1.333 / 0.429 | P | MACPAC 12-month churn, children 19%, adults 28%, disabled 9%, over the all-enrollee 21% (v4.3) |
 | Required capital | 10% / 6% / 15% | J | NAIC H2 factors at a ~400% RBC target |
 | Monte Carlo parameters, filing response | — | J | Calibrate with `estimate_mc_parameters.py` |
 
@@ -426,9 +429,9 @@ the filing-response attribution and the per-cell model-point table), model setti
 |---|---|---|
 | Excel rebuild, approved set | Formulas and reading of the specification | Ties to the cent: cash, DE including the DAC tax schedule, every year, 17 sensitivities (66,860 formulas, 0 errors) |
 | **Excel rebuild, non-neutral v4 settings** | That the v4 formulas (withhold, directed payments, acuity path, corridor, D&V categories and waiting periods) are right, which a tie at neutral settings cannot show; three variants cover the corridor loss side, gain side and floor binding | Ties to the cent in all three |
-| Backtest Test A | Mechanics and timing unbiased; the simulator implements every Medicaid contract term (v4.1) | z = +1.11 / +0.74 / −0.72 |
-| Backtest Test B (against the generator's truth) | NPV error of the estimation process; it can only measure values that differ from the generator's (14 equal it) | Approved public Med Supp trend (6.5%) vs the generator's arbitrary 6.0%: −$261,650; D&V public 3.5% = generator 3.5%: $0; v3 raw D&V fit +$21,993 |
-| Backtest Test C | Parameter vs process risk | 3.1× / 0.9× / 7.5× |
+| Backtest Test A | Mechanics and timing unbiased; the simulator implements every Medicaid contract term (v4.1) | z = +1.11 / +0.75 / −0.49 |
+| Backtest Test B (against the generator's truth) | NPV error of the estimation process; it can only measure values that differ from the generator's (13 equal it) | Approved public Med Supp trend (6.5%) vs the generator's arbitrary 6.0%: −$261,650; D&V public 3.5% = generator 3.5%: $0; v3 raw D&V fit +$21,993 |
+| Backtest Test C | Parameter vs process risk | 3.1× / 1.0× / 5.5× |
 | **Trend estimator study** (30 seeds) | Estimator bias, SE calibration, blend vs raw | Normalized fits unbiased; bootstrap SE 0.86–1.09 of the true SD before the 1.16 inflation; blend RMSE below raw on every line; v3 D&V raw fit biased −1.75 pt |
 | **Forecast vintages** (5) | Forecast accuracy by horizon; persistent bias (on the generator's own curves and payment pattern: known curves) | Incurred PMPM MAPE 2.3–6.7%; no persistent bias on any line or metric (12 tests) |
 | Regression | Every change attributable | v3 off = v2; v4 neutral = v3 (Medicaid at neutral contract terms) |
@@ -496,9 +499,9 @@ They are boundaries of a model built outside Humana, not defects, and each has a
 | Item | Direction / materiality | Mitigation in the kit | Production remedy |
 |---|---|---|---|
 | No Humana experience; public benchmarks are national or industry-level; Medicaid capitation and withhold from one state | Level of every line; sign of Medicaid within judgment ranges | Sources documented with exact figures (ASOP 23, 41); credibility blend built and tested; ranges run | Humana experience through the same blend at the first production cycle |
-| 41 judgment values | Medicaid DE changes sign within 4 ranges (start-up, churn by cell, acuity load, membership); D&V stays negative and Med Supp positive across all | Each disclosed and run across its range | Humana studies (lapse, morbidity, expense, filing history), state data book |
-| 18 values linked to the synthetic book (4 placeholders read off it, 14 equal to the generator's); trend normalization and the forecast use the generator's curves and payment pattern | Test B measures only values that differ from the generator's; forecast accuracy is on known curves | Disclosed list, recomputed by a test; the placeholders do not affect the headline results | Humana sales plan, data book, morbidity and completion studies |
-| DAC tax classification (Med Supp 9.2%; D&V and Medicaid 0); §848(c)(2) cap not applied; tax year = policy year | Med Supp DE −$101,388; D&V DE −$8,816 more if guaranteed renewable (swept) | Statute cited; separate bridge step | Corporate Tax confirmation |
+| 40 judgment values | Medicaid DE changes sign within 3 swept ranges (start-up, risk-adjustment capture, equal churn by cell); D&V within one (pent-up 1.10); Med Supp positive across all | Each disclosed and run across its range | Humana studies (lapse, morbidity, expense, filing history), state data book |
+| 17 values linked to the synthetic book (4 placeholders read off it, 13 equal to the generator's); trend normalization and the forecast use the generator's curves and payment pattern | Test B measures only values that differ from the generator's; forecast accuracy is on known curves | Disclosed list, recomputed by a test; the placeholders do not affect the headline results | Humana sales plan, data book, morbidity and completion studies |
+| DAC tax classification (Med Supp 9.2%; D&V and Medicaid 0); §848(c)(2) cap not applied; tax year = policy year | Med Supp DE −$101,388; D&V DE −$8,894 more if guaranteed renewable (swept) | Statute cited; separate bridge step | Corporate Tax confirmation |
 | Rating-basis comparison holds issue mix, lapse and anti-selection fixed | Actuarial equivalence before selection effects; community rating is optimistic | Stated with the results | Market and lapse response by basis from Med Supp pricing |
 | Medicaid admin is a flat PMPM across rate cells | Drives the sign under MACPAC churn by cell | Swept and disclosed | Per-cell admin from the state data |
 | No active-life reserve; tax reserves = statutory; tax losses used immediately; capital as % of annualized paid claims | DE modestly overstated; issue-age DE not reported | Pricing-grade use only (§1); rating bases on cash NPV | Valuation, Corporate Tax and the capital model |

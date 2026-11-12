@@ -2,6 +2,34 @@
 
 All figures are on the synthetic practice book. From 4.1.0 the assumptions rest on public sources, statute and documented judgment; earlier versions used illustrative values.
 
+## 4.3.0 — two assumption consistency corrections
+
+Assumption set AS-SYN-2026-010 supersedes AS-SYN-2026-009. Every changed figure is in
+`output/results.json`; `make run` passes (113 tests, Excel = Python to $0.00 in every variant).
+
+- **D&V annual rate increase 3.0% → 3.5%, equal to the claim trend.** At 3.0% against a 3.5% trend
+  the margin eroded every year by construction. The 2013 memo it came from filed 3% against its own
+  3% trend, so the source supports increases at trend. D&V DE NPV −$40,686 → −$33,612; P(DE < 0)
+  99.8% → 98.6%; the recommended reprice is +7.1% ($41.78 a month) instead of +8.0%.
+- **Medicaid churn relativity by rate cell 1.0 / 1.0 / 1.0 → MACPAC 12-month churn by eligibility
+  group** (children 19%, adults 28%, disabled 9%, over the all-enrollee 21%; normalized to the 25%
+  blend). Equal churn was a parsimony judgment against available public data, and it was material.
+  Medicaid DE NPV −$1,089,199 → +$2,711,443, but P(DE < 0) is 47.2%, so the call stays "do not bid
+  at these terms". The synthetic book's churn by cell is dispositioned like trend and lapse
+  (not relevant experience, ASOP 25 §3.3).
+- **In-force D&V forecast reads the book's own rate action** (its January premium step, 3.0%), as
+  Medicaid already did, so the new-business 3.5% does not leak into the existing book's forecast or
+  the A/E vintages (`config/forecast_config.json`).
+- **Med Supp premium age step unchanged at 3.0%.** It is the existing book's filed attained-age
+  table and inside the public 2.7–3.5% range. Older issue ages being underpriced against the 3.8%
+  claim slope is a pricing finding, which the per-cell pricing solve handles; it is not an
+  assumption error.
+- Test `test_rate_cells_blend_to_contract_level_assumptions` checks month-1 revenue at equal churn:
+  with churn differing by cell the month-1 mix already tilts toward the ABD cell, which a second
+  assertion now checks. Drift ALERTs 5 → 4 (Medicaid is no longer below DE break-even).
+- Docs and README updated to the new figures; stale "Medicaid −12%" docstring in
+  `04_npv_engine.py` corrected.
+
 ## 4.2.1 — display and documentation (model version 4.2.0 unchanged)
 
 No figure, assumption or approval changed: the model version stays 4.2.0, the assumption set

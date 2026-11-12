@@ -329,7 +329,7 @@ for ci, cn in enumerate(rc_["cells"], start=1):
     rows += [(f"{cn}: member share", rc_["member_share"][ci - 1], f"MD_Sh{ci}", "Starting and joiner mix. From the experience book; in production the state data book." if ci == 1 else "", FMT_PCT, False),
              (f"{cn}: capitation relativity", rc_["capitation_relativity"][ci - 1], f"MD_CapR{ci}", "Cell capitation ÷ blended. From the experience book (SQL 07 assumption indications)." if ci == 1 else "", FMT_F4, False),
              (f"{cn}: loss-ratio relativity", rc_["loss_ratio_relativity"][ci - 1], f"MD_MedR{ci}", "Cell cost = cell capitation × blended cost ratio × this (a loss-ratio, not cost, relativity). 1.0: no difference beyond 2 SE in the experience." if ci == 1 else "", FMT_F4, False),
-             (f"{cn}: disenrollment relativity", rc_["disenrollment_relativity"][ci - 1], f"MD_ChR{ci}", "1.0: churn does not differ by cell in the experience." if ci == 1 else "", FMT_F4, False)]
+             (f"{cn}: disenrollment relativity", rc_["disenrollment_relativity"][ci - 1], f"MD_ChR{ci}", "MACPAC 12-month churn by eligibility group (children 19%, adults 28%, disabled 9%), normalized to the blended rate." if ci == 1 else "", FMT_F4, False)]
 SS = "(MD_Sh1+MD_Sh2+MD_Sh3)"
 for ci, cn in enumerate(rc_["cells"], start=1):
     rows += [(f"{cn}: share used (formula)", f"=IF(F_RateCells=1,MD_Sh{ci}/{SS},{1 if ci == 1 else 0})", f"MD_S{ci}", "Off: one blended cell." if ci == 1 else "", FMT_PCT, False)]

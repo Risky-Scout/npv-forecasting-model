@@ -52,8 +52,8 @@
    "_note": "Approved annual_rate_increase applied each January (the experience shows premium stepping in January). Production: the rate-filing plan by state."
   },
   "DENTAL_VISION": {
-   "source": "assumption",
-   "_note": "Approved annual_rate_increase each January."
+   "source": "inferred",
+   "_note": "v4.3: the latest January premium step for continuing members, as Medicaid. The approved annual_rate_increase (3.5%, at trend) prices new business; the existing book's own filings have been 3%. Production: the rate-filing plan by state."
   },
   "MEDICAID": {
    "source": "inferred",

@@ -3,7 +3,7 @@
 [![release run](https://github.com/Risky-Scout/npv-forecasting-model/actions/workflows/release-run.yml/badge.svg)](https://github.com/Risky-Scout/npv-forecasting-model/actions/workflows/release-run.yml)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Risky-Scout/npv-forecasting-model)
 
-Joey Shackelford, ASA, MAAA · version 4.2.0
+Joey Shackelford, ASA, MAAA · version 4.3.0
 
 This model values and prices new business, and forecasts the in-force book, for three health
 lines: Medicare Supplement, individual Dental & Vision, and Medicaid managed care. I built it for
@@ -78,8 +78,8 @@ the run still ends with `All steps completed.`:
   basis. The approval dispositions them, because synthetic data isn't relevant experience.
 - A Medicaid holdout BIAS FLAG (−6.9%) is one noisy year; across rolling origins it averages
   −2.4%, and only persistent bias becomes a REVIEW item.
-- Five drift ALERTs: three Medicaid terminations (the redetermination wave) and two lines whose
-  base DE NPV is below break-even (D&V and Medicaid).
+- Four drift ALERTs: three Medicaid terminations (the redetermination wave) and D&V, whose base
+  DE NPV is below break-even.
 - Med Supp High-Deductible G cells flagged `outside the single public reference 0.18`: the only
   public HDG relativity is one carrier's, so any repriced HDG cell is flagged for a market check.
 - Spark prints WARN lines and a `FutureWarning` that PySpark doesn't yet fully support pandas 3.
@@ -93,8 +93,8 @@ The data generator uses a fixed seed, so every run reproduces the figures below 
 ### Changing an assumption
 
 Edit a value in `code/python/npv_assumptions.json`, then run `make quick`. For example, set
-`DENTAL_VISION` → `annual_premium_year1` from `468.0` to `505.32` (the model's recommended price):
-D&V DE NPV moves from −$40,686 to +$21,335 with P(DE < 0) of 9.8%, and Excel still ties to
+`DENTAL_VISION` → `annual_premium_year1` from `468.0` to `501.36` (the model's recommended price):
+D&V DE NPV moves from −$33,612 to +$22,332 with P(DE < 0) of 9.9%, and Excel still ties to
 Python to the cent on the edited set.
 
 The governance controls treat an edited set the way they would in production review:
@@ -121,8 +121,8 @@ stays at its best estimate, and regulatory limits are never relaxed.
 |---|---|---|---|
 | Med Supp, Plan G at 65 (per 1,000) | $411,854, 3.0% | Keep the price (1.5% headroom). This depends on rate filings continuing to respond to emerging claims; with no response P(DE < 0) is 24.7% | $411,854, 3.0% |
 | Med Supp portfolio, issue age × plan (per 1,000) | $119,341, 28.0% | Plan N +2.0% to +8.1%, older-age Plan G +1.3% to +6.6%. High-Deductible G is capped by the 65% minimum loss ratio | $382,991, 3.1% |
-| Dental & Vision (per 1,000) | −$40,686, 99.8% | Raise the premium 8.0%, from $39.00 to $42.11 a month. Flagged for market review: 8% above the public reference | $21,335, 9.8% |
-| Medicaid, new-state contract (10,000 members) | −$1,089,199, 57.0% | Do not bid at these terms. It would need a cost ratio of 82.6% (public MCO MLRs run 87.1–90.6%) or admin of $10.07 PMPM (public $39–$46), and capitation is set by the state | — |
+| Dental & Vision (per 1,000) | −$33,612, 98.6% | Raise the premium 7.1%, from $39.00 to $41.78 a month. Flagged for market review: 7.1% above the public reference | $22,332, 9.9% |
+| Medicaid, new-state contract (10,000 members) | +$2,711,443, 47.2% | Do not bid at these terms. DE NPV is positive, but the chance of a loss is 47.2%: meeting the target would need a cost ratio of 83.4% (public MCO MLRs run 87.1–90.6%) or admin of $10.99 PMPM (public $39–$46), and capitation is set by the state. The result rests on MACPAC churn by rate cell; at equal churn DE NPV is −$1,089,199, so the state data book decides | — |
 
 What I'd take from these:
 
@@ -132,7 +132,7 @@ What I'd take from these:
   errors understated uncertainty by 25–40%. The model normalizes experience, uses a member-level
   bootstrap and credibility-blends with a public benchmark.
 - **Cash NPV is the wrong decision measure.** After claim lag, investment income, capital, tax and
-  the IRC §848 DAC tax, Med Supp DE is 40% below cash, and Medicaid goes from +$0.52M to −$1.09M.
+  the IRC §848 DAC tax, Med Supp DE is 40% below cash, and Medicaid DE ($2.71M) is 52% below cash ($5.62M).
 - **Management action belongs in the risk measure.** With no rate-filing response, Med Supp
   P(cash NPV < 0) is 18.6%; with filings that close half the visible gap each year it is 0.6%.
   The response strength is judgment, so the attribution shows the whole range.
@@ -194,9 +194,9 @@ volume, not morbidity.
 
 **Assumptions.** All 89 are in a register ([docs/ASSUMPTION_BASIS.md](docs/ASSUMPTION_BASIS.md))
 with source, figure, ASOP reference and range: 30 public sources (Medicare Trustees, CMS, MACPAC,
-SSA, NAIC, Milliman, Gen Re and others), 4 statutory, 4 derived, 10 model settings and 41
+SSA, NAIC, Milliman, Gen Re and others), 4 statutory, 5 derived, 10 model settings and 40
 judgment values. Every judgment value is run across its range. The synthetic book gets no
-credibility in pricing (ASOP 25 §3.3), and the 18 values that happen to equal or come from the
+credibility in pricing (ASOP 25 §3.3), and the 17 values that happen to equal or come from the
 synthetic generator are listed. A test fails if any value drifts from the register.
 
 ---
@@ -224,9 +224,10 @@ synthetic generator are listed. A test fails if any value drifts from the regist
 
 - Humana experience, pricing trends and filed rate relativities, which replace the public values
   through the same credibility blend.
-- The 41 judgment values, including the Monte Carlo calibration (`estimate_mc_parameters.py`
-  proposes values from rate-filing and trend history). Medicaid DE changes sign within four of
-  their ranges; D&V stays negative and Med Supp positive across all of them.
+- The 40 judgment values, including the Monte Carlo calibration (`estimate_mc_parameters.py`
+  proposes values from rate-filing and trend history). Across the swept ranges, Medicaid DE
+  changes sign within three (start-up cost, risk-adjustment capture, equal churn by cell), D&V
+  within one (a pent-up factor of 1.10), and Med Supp stays positive across all of them.
 - Corporate Tax confirmation of the §848 classification by line, and valuation and capital inputs
   for a statutory-grade profit test.
 - A dry run of the Databricks job in a non-production workspace.
@@ -251,6 +252,9 @@ The go-live checklist with owners is in [docs/RUNBOOK.md](docs/RUNBOOK.md) §2.
   volume and large claims as $177,560 below the pooling charge; the remaining $1,059,633 of
   "trend and morbidity" is the residual by construction. Explaining it needs claims detail by
   service category that the practice book doesn't carry.
+- **Medicaid's sign rests on churn by rate cell.** At MACPAC's churn by cell DE NPV is
+  +$2,711,443; at equal churn it is −$1,089,199. MACPAC is national 2018 data, and the flat admin
+  PMPM across cells adds to the gain. The state data book replaces both before any bid.
 
 **The in-force forecast and the pricing basis disagree on purpose.** The forecast projects the
 existing (synthetic) book on that book's own experience; new-business pricing gives that
@@ -262,8 +266,8 @@ experience no credibility and uses the public basis. So:
   trend is what the drift monitor escalates; it isn't a pricing assumption.
 - The D&V book runs at about 84%, against a priced ultimate of 70.5% from public individual
   dental results. D&V is unprofitable even on the public figure. The design the market actually
-  sells (6-month wait on basic, 12-month on major) turns DE positive, +$50,146 per 1,000
-  (`output/npv/dv_product_options.csv`); the 8% reprice is the answer if the product keeps no
+  sells (6-month wait on basic, 12-month on major) turns DE positive, +$57,220 per 1,000
+  (`output/npv/dv_product_options.csv`); the 7.1% reprice is the answer if the product keeps no
   waiting periods.
 - High-Deductible G rests on one public carrier's relativity (0.18, flagged low confidence) and
   is the first input to replace with Humana's filed relativities.
