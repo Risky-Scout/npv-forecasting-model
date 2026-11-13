@@ -1,4 +1,4 @@
-# Detailed results and kit reference (version 4.3.0)
+# Detailed results and kit reference (version 4.4.0)
 
 Built for the Humana Associate Actuary, Analytics/Forecasting role. It has two parts:
 
@@ -41,11 +41,11 @@ Start with [docs/EXECUTIVE_SUMMARY.md](EXECUTIVE_SUMMARY.md) (two pages).
 >     judgment range (7) supports them, so for those the source is a reasonableness check, not
 >     the derivation. A test recomputes this list from the generator's file.
 
-## Results as priced today (synthetic book, approved set AS-SYN-2026-010)
+## Results as priced today (synthetic book, approved set AS-SYN-2026-011)
 
 | Line | Cash NPV | DE NPV (after tax and capital) | Monte Carlo mean, cash / DE | P(NPV < 0), cash / DE | PV loss ratio | Break-even year, cash / DE |
 |---|---|---|---|---|---|---|
-| Med Supp (Plan G at 65, per 1,000) | $692,009 | $411,854 | $688,437 / $408,165 | 0.6% / 3.0% | 75.7% | 2 / 2 |
+| Med Supp (Plan G at 65, per 1,000) | $692,009 | $411,854 | $682,965 / $403,863 | 1.2% / 3.6% | 75.7% | 2 / 2 |
 | Med Supp portfolio (issue-age × plan mix, per 1,000) | $310,389 | $119,341 | — | — | 78.2% | — |
 | Dental & Vision (per 1,000) | **−$41,142** | **−$33,612** | −$39,743 / −$32,526 | 98.2% / 98.6% | 76.9% | not reached |
 | Medicaid (10,000-member new-state contract) | $5,620,026 | $2,711,443 | $2,414,756 / $115,066 | 43.0% / 47.2% | 90.1% | 6 / 11 |
@@ -95,13 +95,13 @@ Start with [docs/EXECUTIVE_SUMMARY.md](EXECUTIVE_SUMMARY.md) (two pages).
 |---|---|---|---|
 | v3 basis (parameter level shifts) | 8.9% / 15.1% | 96.4% / 96.9% | 41.5% / 47.0% |
 | + year-to-year process risk | 12.5% / 18.7% | 95.0% / 95.6% | 42.7% / 47.1% |
-| + rate-filing response (v4) | 0.6% / 3.0% | 98.2% / 98.6% | 43.0% / 47.2% |
+| + rate-filing response (v4; v4.4: each filing capped at 10%) | 1.2% / 3.6% | 98.2% / 98.6% | 43.0% / 47.2% |
 
 Step 3 adds the filing response **and** removes v3's −0.5 trend / rate-shortfall correlation,
 which the response replaces (keeping both would count it twice). The clean no-response comparison
-is gap closure 0, where Med Supp P(cash NPV < 0) is 18.6%. Gap closure 0.25 and 0.75 give 3.7%
-and 0.15%. The Monte Carlo volatilities are judgment too: across their ranges Med Supp P(DE < 0)
-runs from 0.3% to 8.6%, driven by the trend level-shift SD (`npv_mc_parameter_sensitivity.csv`).
+is gap closure 0, where Med Supp P(cash NPV < 0) is 18.6%. Gap closure 0.25 and 0.75 give 4.0%
+and 0.56%. The Monte Carlo volatilities are judgment too: across their ranges Med Supp P(DE < 0)
+runs from 0.35% to 9.7%, driven by the trend level-shift SD (`npv_mc_parameter_sensitivity.csv`).
 
 ## Recommended pricing (v4.2)
 
@@ -118,8 +118,8 @@ pricing policy to set, in the governed file `config/pricing_targets.json`.
 
 | Line | As priced | Recommended | P(DE < 0) | DE NPV at recommended | Constraint and market check |
 |---|---|---|---|---|---|
-| Med Supp, Plan G at 65 (base cell) | $1,980 a year | **No change.** The cell already meets the target; the minimum is $1,950 (1.5% headroom) | 3.0% | $411,854 | PV loss ratio 75.7%, above the 65% minimum. Below the KFF all-ages average of $2,323. Relies on the filing response (below) |
-| Med Supp portfolio (all model points) | P(DE < 0) **28.0% as priced** | **Plan N +2.0% to +8.1%; older-age Plan G +1.3% to +6.6%,** each to the base cell's 3.17% DE margin | **3.1%** | Portfolio **$382,991** per 1,000 (from $119,341) | N within Maryland's 0.65–0.90 relativity range. REVIEW: the implied Plan G age step is 3.55% against a public maximum of 3.5% |
+| Med Supp, Plan G at 65 (base cell) | $1,980 a year | **No change.** The cell already meets the target; the minimum is $1,952 (1.4% headroom) | 3.6% | $411,854 | PV loss ratio 75.7%, above the 65% minimum. Below the KFF all-ages average of $2,323. Relies on the filing response (below) |
+| Med Supp portfolio (all model points) | P(DE < 0) **28.4% as priced** | **Plan N +2.0% to +8.1%; older-age Plan G +1.3% to +6.6%,** each to the base cell's 3.17% DE margin | **3.8%** | Portfolio **$382,991** per 1,000 (from $119,341) | N within Maryland's 0.65–0.90 relativity range. REVIEW: the implied Plan G age step is 3.55% against a public maximum of 3.5% |
 | Med Supp, High-Deductible G | — | **Capped** at +16.5% to +26.0% by the 65% minimum loss ratio; three of four HDG cells still lose money | — | −$116,625 to +$40,082 per 1,000 | REVIEW: relativity 0.21 against one public 0.18. Per-policy costs must fall, or HDG is a loss leader |
 | Dental & Vision | $468 a year ($39.00 a month) | **$501.36 ($41.78 a month), +7.1%** | 9.9% | **$22,332** (cash $29,924) | State rate filing (no federal minimum loss ratio). REVIEW: 7.1% above the one public reference. If lapse rises 10% in response to price, it needs +8.6% |
 | Medicaid new-state contract | Capitation set by the state | **Do not bid at these terms** | 47.2% | +$2,711,443 | Meeting the target needs a starting cost ratio of 83.4% (a PV MLR of 83.8%, against public MCO MLRs of 87.1–90.6% and below the 85% floor) or admin of $10.99 PMPM (public $39–$46). Neither is achievable |
@@ -132,6 +132,14 @@ Four things to read with the table:
 - **Excel checks the NPVs at the recommended premiums.** At those premiums the independent Excel
   model reproduces the Python cash and DE NPVs to the cent (`tests/e2e_excel_pricing.py`). The
   solve itself and the probabilities are Python only.
+- **The company goals (v4.4) are checked on every line** (`goals` column of `npv_pricing_solve.csv`):
+  safety P(DE < 0) ≤ 10%, profit DE ≥ 0 at the 8.5% hurdle, members no in-force increase above 10%
+  a year, market at most 5% above a credible reference. The goals are policy: no assumption moves
+  to meet them. The member cap is enforced in the Monte Carlo filing response and costs Med Supp
+  0.6 pt of P(DE < 0) (3.0% → 3.6%); the D&V reprice reaches existing members over 2 filings.
+- **A risk corridor limits how much Medicaid can lose, not how often.** Negotiated with the state,
+  it cuts the worst-10% average DE from −$30.3M to −$9.9M, but the chance of a loss only from 47.2%
+  to 45.7%, so it does not reverse the call on its own.
 - **Medicaid's positive DE doesn't reverse the call.** MACPAC churn by cell (the v4.3 base) is
   worth +$3.8M of deterministic DE against equal churn, but the 10th-percentile DE is −$19.8M and
   the chance of a loss is 47.2%. Confirm churn with the state data book before deciding.
@@ -177,7 +185,7 @@ each with its mitigation.
   0.5 pt above the generator's arbitrary 6.0%, costing −$261,650. That is expected, because the
   generator is not the public process. D&V: $0. Test B can only measure error in values that
   differ from the generator's (chiefly trend), because 13 values equal it.
-- **Test C:** parameter-to-process risk ratio 3.1 / 1.0 / 5.5.
+- **Test C:** parameter-to-process risk ratio 3.2 / 1.0 / 5.5.
 - **Forecast:** incurred PMPM MAPE 2.3–6.7% by horizon. No persistent bias on any line or metric
   (12 tests, 5 vintages). These use the generator's claim-cost curves and payment pattern, i.e.
   known curves; on Humana data the curves are estimated, so expect wider errors.
@@ -186,7 +194,7 @@ each with its mitigation.
 - **Trend estimator study** (30 seeds): normalized fits are unbiased and the inflated bootstrap
   SE is calibrated ([docs/validation/trend_estimator_study.md](validation/trend_estimator_study.md)).
 - **Production end to end** (two phases), the **Databricks job run locally** (17 tasks), and
-  **113 automated tests**, all passing.
+  **119 automated tests**, all passing.
 
 ## Run it
 
@@ -204,7 +212,7 @@ python code/python/render_assumption_basis.py   # regenerate docs/ASSUMPTION_BAS
 
 - **PASS verdicts:**
   - controls gate
-  - assumption gate `APPROVED` (AS-SYN-2026-010)
+  - assumption gate `APPROVED` (AS-SYN-2026-011)
   - both reconciliations
   - backtest z within ±2
   - notebook tie-out
@@ -269,7 +277,7 @@ python code/python/render_assumption_basis.py   # regenerate docs/ASSUMPTION_BAS
 3. **A headline cell is not a portfolio.** Plan G at 65 is worth $411,854 DE per 1,000; the
    realistic issue-age and plan mix is worth $119,341.
 4. **Management actions belong in the risk measure.** With no filing response Med Supp
-   P(cash NPV < 0) is 18.6%; with the assumed response it is 0.6%. How strongly filings follow
+   P(cash NPV < 0) is 18.6%; with the assumed response, capped at 10% a filing, it is 1.2%. How strongly filings follow
    experience is judgment, so the attribution shows the range.
 5. **Cash NPV is not the decision measure.** Medicaid's $5.62M cash NPV is $2.71M after capital
    and tax, and the MLR floor takes the Monte Carlo mean DE to $0.12M. For Med Supp, the DAC tax alone costs $101,388, 20% of DE before it.

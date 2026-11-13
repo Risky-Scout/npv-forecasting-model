@@ -3,7 +3,7 @@
 [![release run](https://github.com/Risky-Scout/npv-forecasting-model/actions/workflows/release-run.yml/badge.svg)](https://github.com/Risky-Scout/npv-forecasting-model/actions/workflows/release-run.yml)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Risky-Scout/npv-forecasting-model)
 
-Joey Shackelford, ASA, MAAA · version 4.3.0
+Joey Shackelford, ASA, MAAA · version 4.4.0
 
 This model values and prices new business, and forecasts the in-force book, for three health
 lines: Medicare Supplement, individual Dental & Vision, and Medicaid managed care. I built it for
@@ -38,7 +38,7 @@ experience takes weight against these public assumptions on the first real cycle
    `make quick` runs every pipeline step (synthetic book, controls, studies, NPV engine and
    pricing solve, forecast, Excel rebuild) and reconciles Excel to Python to the cent. `make run`
    adds the extended validation: the Excel tie-outs at non-neutral contract terms and at the
-   recommended prices, the 113 tests and the local Databricks job. Both check the environment
+   recommended prices, the 119 tests and the local Databricks job. Both check the environment
    first and say what's missing if anything is.
 3. Each ends by printing the headline results, the pricing recommendations and the checks.
    `make results` prints them again at any time. For the workbook, right-click
@@ -119,9 +119,9 @@ stays at its best estimate, and regulatory limits are never relaxed.
 
 | Line | As priced today: DE NPV, P(DE < 0) | Recommendation | At the recommendation |
 |---|---|---|---|
-| Med Supp, Plan G at 65 (per 1,000) | $411,854, 3.0% | Keep the price (1.5% headroom). This depends on rate filings continuing to respond to emerging claims; with no response P(DE < 0) is 24.7% | $411,854, 3.0% |
-| Med Supp portfolio, issue age × plan (per 1,000) | $119,341, 28.0% | Plan N +2.0% to +8.1%, older-age Plan G +1.3% to +6.6%. High-Deductible G is capped by the 65% minimum loss ratio | $382,991, 3.1% |
-| Dental & Vision (per 1,000) | −$33,612, 98.6% | Raise the premium 7.1%, from $39.00 to $41.78 a month. Flagged for market review: 7.1% above the public reference | $22,332, 9.9% |
+| Med Supp, Plan G at 65 (per 1,000) | $411,854, 3.6% | Keep the price (1.4% headroom). This depends on rate filings continuing to respond to emerging claims, within the 10% member cap; with no response P(DE < 0) is 24.7% | $411,854, 3.6% |
+| Med Supp portfolio, issue age × plan (per 1,000) | $119,341, 28.4% | Plan N +2.0% to +8.1%, older-age Plan G +1.3% to +6.6%. High-Deductible G is capped by the 65% minimum loss ratio | $382,991, 3.8% |
+| Dental & Vision (per 1,000) | −$33,612, 98.6% | Raise the premium 7.1%, from $39.00 to $41.78 a month; for existing members phase it over 2 filings (the 10% cap). Flagged for market review: 7.1% above the one public reference, which is too weak to enforce the 5% limit | $22,332, 9.9% |
 | Medicaid, new-state contract (10,000 members) | +$2,711,443, 47.2% | Do not bid at these terms. DE NPV is positive, but the chance of a loss is 47.2%: meeting the target would need a cost ratio of 83.4% (public MCO MLRs run 87.1–90.6%) or admin of $10.99 PMPM (public $39–$46), and capitation is set by the state. The result rests on MACPAC churn by rate cell; at equal churn DE NPV is −$1,089,199, so the state data book decides | — |
 
 What I'd take from these:
@@ -134,7 +134,8 @@ What I'd take from these:
 - **Cash NPV is the wrong decision measure.** After claim lag, investment income, capital, tax and
   the IRC §848 DAC tax, Med Supp DE is 40% below cash, and Medicaid DE ($2.71M) is 52% below cash ($5.62M).
 - **Management action belongs in the risk measure.** With no rate-filing response, Med Supp
-  P(cash NPV < 0) is 18.6%; with filings that close half the visible gap each year it is 0.6%.
+  P(cash NPV < 0) is 18.6%; with filings that close half the visible gap each year, capped at 10% a
+  year, it is 1.2%.
   The response strength is judgment, so the attribution shows the whole range.
 - **A headline cell isn't a portfolio.** Plan G at 65 is the best cell in the book. At realistic
   issue ages and plan mix the same product is worth $119,341, because filed age steps (3.0%)
@@ -216,7 +217,7 @@ synthetic generator are listed. A test fails if any value drifts from the regist
 - **Production mode** runs end to end on extracts in a separate layout and reproduces the
   synthetic results exactly. The 17-task Databricks job definition is run locally in dependency
   order.
-- **113 automated tests.** The full run is repeated on every push (badge at the top).
+- **119 automated tests.** The full run is repeated on every push (badge at the top).
 
 ---
 
@@ -252,6 +253,10 @@ The go-live checklist with owners is in [docs/RUNBOOK.md](docs/RUNBOOK.md) §2.
   volume and large claims as $177,560 below the pooling charge; the remaining $1,059,633 of
   "trend and morbidity" is the residual by construction. Explaining it needs claims detail by
   service category that the practice book doesn't carry.
+- **The company goals are policy stand-ins.** The 10% risk tolerance, the 10% member increase
+  cap and the 5% market limit are judgment defaults in `config/pricing_targets.json`; Humana's
+  pricing policy and risk appetite statement replace them. The D&V market reference is a single
+  filing, so its 5% limit is only a flag until competitor rate surveys replace it.
 - **Medicaid's sign rests on churn by rate cell.** At MACPAC's churn by cell DE NPV is
   +$2,711,443; at equal churn it is −$1,089,199. MACPAC is national 2018 data, and the flat admin
   PMPM across cells adds to the gain. The state data book replaces both before any bid.

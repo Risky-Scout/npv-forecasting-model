@@ -1,4 +1,4 @@
-# NPV Forecasting Model v4.3 — Executive summary
+# NPV Forecasting Model v4.4 — Executive summary
 
 **What it is.** A working forecasting and valuation model for three Humana lines: Medicare
 Supplement, individual Dental & Vision, and Medicaid managed care. It does the two jobs an
@@ -26,9 +26,9 @@ relaxed.
 
 | Line | As priced today: DE NPV, P(DE < 0) | For Humana | Recommendation | DE NPV at recommendation, P(DE < 0) |
 |---|---|---|---|---|
-| Med Supp, Plan G at 65 (per 1,000) | $411,854, 3.0% | Good | **Keep the price.** The cell meets the target with 1.5% headroom, provided rate filings keep responding to emerging claims (24.7% with no response) | $411,854, 3.0% |
-| Med Supp portfolio (age × plan mix) | $119,341, 28.0% | Good, but fails the risk target as priced | **Reprice Plan N +2% to +8% and older-age Plan G +1% to +7%.** High-Deductible G can't reach the base cell's margin inside the 65% minimum loss ratio | $382,991, 3.1% |
-| Dental & Vision (per 1,000) | −$33,612, 98.6% | Bad as priced | **Raise the premium 7.1%**, $39.00 → $41.78 a month | $22,332, 9.9% |
+| Med Supp, Plan G at 65 (per 1,000) | $411,854, 3.6% | Good | **Keep the price.** The cell meets the target with 1.4% headroom, provided rate filings keep responding to emerging claims (24.7% with no response) | $411,854, 3.0% |
+| Med Supp portfolio (age × plan mix) | $119,341, 28.4% | Good, but fails the risk target as priced | **Reprice Plan N +2% to +8% and older-age Plan G +1% to +7%.** High-Deductible G can't reach the base cell's margin inside the 65% minimum loss ratio | $382,991, 3.1% |
+| Dental & Vision (per 1,000) | −$33,612, 98.6% | Bad as priced | **Raise the premium 7.1%**, $39.00 → $41.78 a month (existing members: over 2 filings, the 10% cap) | $22,332, 9.9% |
 | Medicaid new-state contract (10,000 members) | +$2,711,443, 47.2% | Thin: positive, but close to a coin flip | **Do not bid at these terms.** Capitation is state-set, and the cost ratio or admin needed to meet the target lies outside every public range. The positive DE rests on MACPAC churn by rate cell; at equal churn it is −$1,089,199, so the state data book comes first | — |
 
 At the recommended premiums, the independent Excel model reproduces the Python NPVs to the cent.
@@ -47,8 +47,8 @@ Three findings a pricing or forecasting lead would act on:
    and the IRC §848 DAC tax, Med Supp DE is 40% below cash and Medicaid DE is 52% below cash.
    Medicaid's MLR floor takes the Monte Carlo mean DE down to $0.12M.
 3. **Management action belongs in the risk measure.** With no filing response, Med Supp
-   P(cash NPV < 0) is 18.6%; with filings that close half the visible gap each year it is 0.6%.
-   The response strength is judgment, so the kit shows the range (0.15% to 18.6%).
+   P(cash NPV < 0) is 18.6%; with filings that close half the visible gap each year (each at most
+   10%) it is 1.2%. The response strength is judgment, so the kit shows the range (0.56% to 18.6%).
 
 ## Why the numbers can be trusted
 
@@ -70,7 +70,7 @@ Three findings a pricing or forecasting lead would act on:
   credibility standard and a drift-alert gap.
 - **Production mode is proven.** It runs end to end on source extracts in a separate layout and
   reproduces the synthetic results exactly. The Databricks job definition (17 tasks) is
-  validated and executed locally in dependency order. 113 automated tests pass.
+  validated and executed locally in dependency order. 119 automated tests pass.
 
 ## What the forecasting layer does each month
 

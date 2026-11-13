@@ -2,6 +2,28 @@
 
 All figures are on the synthetic practice book. From 4.1.0 the assumptions rest on public sources, statute and documented judgment; earlier versions used illustrative values.
 
+## 4.4.0 — company goals in the pricing solve (no assumption changed)
+
+Assumption set AS-SYN-2026-011 supersedes AS-SYN-2026-010 (the approval hash covers
+`config/pricing_targets.json`). `make run` passes: 119 tests, Excel = Python to $0.00 in every
+variant. Goals are POLICY, kept apart from the assumptions: no assumption moves to meet them.
+
+- **Safety:** P(DE < 0) ≤ 10% on every line, with the worst-10% average DE now reported
+  (`de_tail_mean_*` columns). Medicaid as bid: −$30,330,317.
+- **Profit:** DE ≥ 0 at the 8.5% hurdle. No second margin target (it would double-count the risk margin).
+- **Members:** no in-force increase above 10% a year (Med Supp, D&V), enforced in the Monte Carlo
+  filing response (`management_rate_path(..., cap=)`): a capped filing carries the rest of the gap
+  forward. Med Supp P(DE < 0) 3.0% → 3.6%, P(cash < 0) 0.6% → 1.2%; minimum premium $1,950 →
+  $1,952; portfolio 28.0% → 28.4% as priced, 3.1% → 3.8% at the recommended cell prices. The D&V
+  reprice reaches existing members over 2 filings (10.9% in one would exceed the cap).
+- **Market:** at most 5% above a credible reference (hard limit; Med Supp vs KFF, met). The single
+  D&V filing is low confidence, so +7.1% stays a REVIEW flag.
+- **New levers:** D&V fallback waiting-period designs, tried only if price inside the limits cannot
+  meet the risk target; a Medicaid risk corridor tested as a negotiable term (P(DE < 0) 47.2% →
+  45.7%, worst-10% average −$30.3M → −$9.9M: still "do not bid at these terms").
+- 6 tests added; `test_zero_strength_response_equals_no_response` now isolates the response
+  mechanism from the cap. `show_results.py` prints the member phasing and the Medicaid term.
+
 ## 4.3.0 — two assumption consistency corrections
 
 Assumption set AS-SYN-2026-010 supersedes AS-SYN-2026-009. Every changed figure is in

@@ -151,6 +151,25 @@
         "MEDICAID.rate_cells.disenrollment_relativity[ADULT]": "As CHILD.",
         "MEDICAID.rate_cells.disenrollment_relativity[ABD]": "As CHILD."
       }
+    },
+    {
+      "id": "AS-SYN-2026-011",
+      "sha256": "a2e8ed239ebd95478d290d27583a809908fd02f1392261db2661773da9b45e98",
+      "model_version": "4.4.0",
+      "approved_by": "Responsible actuary (synthetic example)",
+      "approved_on": "2026-11-12",
+      "scope": "Synthetic practice book: model validation and demonstration only. Not for pricing or reporting.",
+      "notes": "Model version 4.4.0. Supersedes AS-SYN-2026-010. No assumption value changed. config/pricing_targets.json gains the company goals (POLICY, not assumptions): safety P(DE<0) <= 10% with the worst-10% average DE reported; profit = DE NPV >= 0 at the 8.5% hurdle, no second margin target; members = no in-force increase above 10% a year (Med Supp, D&V), enforced in the Monte Carlo filing response; market = at most 5% above a credible reference (KFF for Med Supp; the single D&V filing stays a REVIEW flag). D&V fallback designs (waiting periods, used only if price inside the limits cannot meet the risk target) and the Medicaid negotiable risk corridor are added as levers. Review dispositions carried from AS-SYN-2026-010.",
+      "review_dispositions": {
+        "MEDSUPP.claim_trend": "Keep 6.5% (2026 Trustees Part B per-enrollee pure trend). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. Re-blend when Humana experience is loaded.",
+        "DENTAL_VISION.claim_trend": "Keep 3.5% (ADA HPI / Segal). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. ",
+        "DENTAL_VISION.lapse_by_duration[1]": "Keep 30% (filed individual dental memoranda, public). The synthetic practice book is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0. The in-force forecast of the existing book uses the book's own lapse experience.",
+        "DENTAL_VISION.lapse_by_duration[2]": "As duration 1.",
+        "DENTAL_VISION.lapse_by_duration[3+]": "As duration 1.",
+        "MEDICAID.rate_cells.disenrollment_relativity[CHILD]": "Keep the MACPAC churn relativity (0.905 / 1.333 / 0.429). The synthetic practice book shows no credible churn difference by cell, but it is not relevant experience for a Humana block (ASOP 25 §3.3); credibility 0, as for trend and lapse. Replace with the state data book.",
+        "MEDICAID.rate_cells.disenrollment_relativity[ADULT]": "As CHILD.",
+        "MEDICAID.rate_cells.disenrollment_relativity[ABD]": "As CHILD."
+      }
     }
   ]
 }

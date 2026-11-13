@@ -101,6 +101,9 @@ OUT = OUTPUT_DIR / "npv"
 import assumption_control as _ac  # noqa: E402
 ASSUMPTION_FILE = _ac.assumption_file()
 A = json.loads(ASSUMPTION_FILE.read_text())
+# v4.4: company goals are POLICY and live in config/pricing_targets.json (covered by the approval
+# hash), apart from the assumptions. They decide levers only; no assumption is moved to meet them.
+_PRICING_GOALS = json.loads((ROOT / "config" / "pricing_targets.json").read_text()).get("goals", {})
 FEATURES = ["antiselective_shock_lapse", "dynamic_shock_lapse", "medicaid_rate_cells", "correlated_monte_carlo",
             # v4 (each neutral at its neutral settings; see tests/test_v4_model.py)
             "medicaid_contract_terms", "dv_benefit_categories", "mc_process_risk", "mc_management_response"]
@@ -943,8 +946,15 @@ def process_paths(g: dict, mc: dict, n: int, years: int):
                 md_update=pr["medicaid_rate_update_noise_sd"] * e[2])
 
 
-def management_rate_path(rate, base_trend, trend_dev, noise, resp: dict | None):
+def management_rate_path(rate, base_trend, trend_dev, noise, resp: dict | None, cap: float | None = None):
     """Rate-increase deviation path (years, n): partial-adjustment filing response plus noise.
+
+    v4.4 member goal: cap is the largest in-force increase allowed in one year (config/pricing_targets.json
+    goals.members). A filing that would exceed it is held at the cap; the part not taken stays in the
+    gap (P does not move for it), so later filings try to recover it, again only up to the cap. With
+    cap=None, or a cap no filing reaches, the path is unchanged (tested). The cap acts on FILINGS, so it
+    applies only when the filing response is modelled: with resp=None the deviations are the v3 basis's
+    parameter shortfall and noise, left as they are so the v3 regressions hold.
 
     Without a response the deviation is the noise alone. With one, each filing closes a share h of
     the gap between the claim-cost index deviation the actuary can see (experience lagged L years)
@@ -959,6 +969,8 @@ def management_rate_path(rate, base_trend, trend_dev, noise, resp: dict | None):
     together (checked in monte_carlo()).
     """
     Y = noise.shape[0]
+    # Largest deviation from the base increase that the cap allows: rate + rho <= cap.
+    room = np.inf if cap is None else cap - rate
     if resp is None:
         return noise
     h, L = resp["gap_closure_per_filing"], int(resp["lag_years"])
@@ -969,9 +981,15 @@ def management_rate_path(rate, base_trend, trend_dev, noise, resp: dict | None):
     for s_ in range(1, Y + 1):
         known = s_ + 1 - L
         gap = (D[known - 1] if known >= 1 else 0.0) - P
-        rho[s_ - 1] = (1 + rate) * np.exp(h * gap) - 1 - rate + noise[s_ - 1]
-        P = P + np.log((1 + rate + rho[s_ - 1]) / (1 + rate))
+        rho[s_ - 1] = np.minimum((1 + rate) * np.exp(h * gap) - 1 - rate + noise[s_ - 1], room)
+        P = P + np.log((1 + rate + rho[s_ - 1]) / (1 + rate))     # only the increase actually taken
     return rho
+
+
+def _increase_cap(lob: str) -> float | None:
+    """v4.4 member goal: the largest in-force rate increase in one year (None = no cap). It is policy,
+    so it is read from config/pricing_targets.json, not from the assumption file."""
+    return (_PRICING_GOALS.get("members", {}).get("max_annual_increase", {}) or {}).get(lob)
 
 
 def monte_carlo(no_floor: bool = False, assumptions: dict | None = None) -> pd.DataFrame:
@@ -1004,7 +1022,8 @@ def monte_carlo(no_floor: bool = False, assumptions: dict | None = None) -> pd.D
         # Level shortfall (parameter risk) plus year-to-year approval noise, then the filing response.
         noise = -rate_short * np.ones((Y, n)) - pp["ms_approval"][:Y]
         a["_paths"] = dict(trend=tdev, rate=management_rate_path(a["annual_rate_increase"], AA["MEDSUPP"]["claim_trend"],
-                                                                  tdev + trend_shock, noise, resp.get("MEDSUPP")))
+                                                                  tdev + trend_shock, noise, resp.get("MEDSUPP"),
+                                                                  cap=_increase_cap("MEDSUPP")))
     else:
         a["annual_rate_increase"] = a["annual_rate_increase"] - rate_short
     p = project_medsupp(a, g)
@@ -1017,7 +1036,8 @@ def monte_carlo(no_floor: bool = False, assumptions: dict | None = None) -> pd.D
         Y = a["projection_years"]
         tdev = pp["trend"][:Y]
         a["_paths"] = dict(trend=tdev, rate=management_rate_path(a["annual_rate_increase"], AA["DENTAL_VISION"]["claim_trend"],
-                                                                  tdev + trend_shock, np.zeros((Y, n)), resp.get("DENTAL_VISION")))
+                                                                  tdev + trend_shock, np.zeros((Y, n)), resp.get("DENTAL_VISION"),
+                                                                  cap=_increase_cap("DENTAL_VISION")))
     p = project_dv(a, g)
     out["DENTAL_VISION"] = p["npv"]; out["DENTAL_VISION_DE"] = profit_test("DENTAL_VISION", p, a, g)["de_npv"]
 
@@ -1410,6 +1430,37 @@ def _risk_stats(de: np.ndarray, tol: float) -> tuple[float, float]:
     return float(np.quantile(de, tol)), float((de < 0).mean())
 
 
+def _tail_mean(de: np.ndarray, tol: float) -> float:
+    """v4.4 safety goal, severity: the average DE NPV in the worst tol share of scenarios (CTE). The
+    probability target says how often a line may lose; this says how much it loses when it does."""
+    q = np.quantile(de, tol)
+    return float(de[de <= q].mean())
+
+
+def _dv_design(waits: dict):
+    """Mutation that applies a D&V waiting-period design ({category: months}) to the assumption copy."""
+    def mut(AA):
+        cats = AA["DENTAL_VISION"]["benefit_categories"]["categories"]
+        AA["DENTAL_VISION"]["benefit_categories"]["waiting_period_months"] = [waits.get(c_, 0) for c_ in cats]
+    return mut
+
+
+def _phasing(change: float, base_increase: float, cap: float | None) -> str:
+    """v4.4 member goal: how an in-force reprice fits under the one-year cap. Existing members already
+    get the base filed increase each year, so a reprice on top of it is phased: each filing adds at most
+    (1 + cap) / (1 + base increase) - 1 beyond the base increase."""
+    if cap is None or change <= 1e-12:
+        return "no in-force increase beyond the base filing"
+    total = (1 + change) * (1 + base_increase) - 1
+    if total <= cap + 1e-12:
+        return f"in-force: {total:.1%} in one filing (within the {cap:.0%} cap)"
+    step = (1 + cap) / (1 + base_increase) - 1
+    if step <= 0:
+        return f"in-force: the base increase alone uses the {cap:.0%} cap; the reprice cannot be phased in"
+    n = int(np.ceil(np.log(1 + change) / np.log(1 + step)))
+    return f"in-force: {total:.1%} in one filing exceeds the {cap:.0%} cap; phase over {n} filings (new business at the new price now)"
+
+
 def _set_key(AA: dict, lob: str, key: str, v):
     t = AA[lob]
     *path, leaf = key.split(".")
@@ -1458,30 +1509,79 @@ def pricing_solve() -> tuple[pd.DataFrame, pd.DataFrame]:
     from scipy.optimize import brentq
     tol = float(PRICING["risk_tolerance"])
     rows = []
+    goals = PRICING.get("goals", {})
     # ---- premium lines: Med Supp and D&V
     for lob in ("MEDSUPP", "DENTAL_VISION"):
         c = PRICING["lines"][lob]
         cur = float(A[lob]["annual_premium_year1"])
-        q_cur, p_cur = _risk_stats(_mc_de(lob, lambda AA: None), tol)
-        m = _solve_quantile_zero(lob, "annual_premium_year1", 0.5, 2.0, tol)
-        assert m is not None, f"{lob}: no premium in [0.5, 2.0] x current meets the risk target"
-        req = cur * m
-        rec = max(cur, np.ceil(req / 12 * 100) / 100 * 12)        # never cut a price that already meets it; whole cents a month
-        a = copy.deepcopy(A[lob]); a["annual_premium_year1"] = rec
-        d = _det(lob, a)
-        q_rec, p_rec = _risk_stats(_mc_de(lob, lambda AA: AA[lob].__setitem__("annual_premium_year1", rec)), tol)
+        de_cur = _mc_de(lob, lambda AA: None)
+        q_cur, p_cur = _risk_stats(de_cur, tol)
+        # v4.4 market goal: a hard limit only against a CREDIBLE reference; against a single low-confidence
+        # filing it stays a REVIEW flag, so one weak data point cannot override the pricing.
+        ref, mx = c["market_reference"], goals.get("market", {}).get("max_above_reference")
+        credible = c.get("market_reference_confidence") == "credible"
+        price_cap = ref * (1 + mx) if (mx is not None and credible) else None
+
+        def solve(design=None):
+            """Minimum premium meeting the risk target (with an optional benefit design), and the
+            recommendation: never below today's price, rounded up to whole cents a month."""
+            extra = _dv_design(design["waiting_period_months"]) if design else None
+            m = _solve_quantile_zero(lob, "annual_premium_year1", 0.5, 2.0, tol, extra=extra)
+            assert m is not None, f"{lob}: no premium in [0.5, 2.0] x current meets the risk target"
+            req_ = cur * m
+            return req_, max(cur, np.ceil(req_ / 12 * 100) / 100 * 12), extra
+
+        design = None
+        req, rec, extra = solve()
+        # Price comes first. Only if no premium inside the market limit meets the risk target is a
+        # benefit design tried, least restrictive first (D&V waiting periods, capped at the market norm).
+        market_binds = price_cap is not None and rec > price_cap * (1 + 1e-9)
+        if market_binds:
+            for dz in c.get("fallback_designs", []):
+                r2 = solve(dz)
+                if r2[1] <= price_cap * (1 + 1e-9):
+                    design, (req, rec, extra), market_binds = dz, r2, False
+                    break
+
+        def at_rec(AA, rec=rec, extra=extra):
+            if extra:
+                extra(AA)
+            AA[lob]["annual_premium_year1"] = rec
+        tmp = {lob: copy.deepcopy(A[lob])}; at_rec(tmp)
+        d = _det(lob, tmp[lob])
+        de_rec = _mc_de(lob, at_rec)
+        q_rec, p_rec = _risk_stats(de_rec, tol)
         lr_ok = c["min_pv_loss_ratio"] is None or d["pv_loss_ratio"] >= c["min_pv_loss_ratio"]
         # A recommendation above the minimum-loss-ratio cap could not be filed: never report it as a price.
         assert lr_ok, f"{lob}: the risk target needs a PV loss ratio below the {c['min_pv_loss_ratio']:.0%} minimum; reprice by cell"
-        mkt = "at or below the public reference" if rec <= c["market_reference"] * (1 + 1e-9) else f"REVIEW: {rec / c['market_reference'] - 1:+.1%} above the public reference"
-        status = ("MEETS TARGET at the current premium" if rec == cur else "REPRICE") if lr_ok else "CONSTRAINT FAILS"
+        above = rec / ref - 1
+        if price_cap is not None:
+            mkt = (f"{above:+.1%} vs the credible reference: within the {mx:.0%} limit" if not market_binds
+                   else f"LIMIT BINDS: {above:+.1%} vs the credible reference exceeds the {mx:.0%} limit")
+        else:
+            mkt = ("at or below the public reference" if rec <= ref * (1 + 1e-9) else f"REVIEW: {above:+.1%} above the public reference")
+            if mx is not None and rec > ref * (1 + mx) + 1e-9:
+                mkt += f" (over the {mx:.0%} limit, but the reference is low confidence: a flag, not a limit)"
+        if market_binds:
+            status = "CANNOT MEET ALL GOALS: the market limit binds and no allowed design closes the gap"
+        elif rec == cur:
+            status = "MEETS TARGET at the current premium" + ("" if design is None else " WITH DESIGN")
+        else:
+            status = "REPRICE" if design is None else "REPRICE WITH DESIGN"
+        change = rec / cur - 1
+        members = _phasing(change, float(A[lob]["annual_rate_increase"]), _increase_cap(lob))
+        goal_txt = (f"safety: P(DE<0) {p_rec:.1%} vs {tol:.0%} {'met' if p_rec <= tol + 1e-12 else 'FAILS'}; "
+                    f"profit: DE NPV {d['de_npv']:+,.0f} at the hurdle {'met' if d['de_npv'] >= 0 else 'FAILS'}; "
+                    f"members: {members}; market: {'met' if not market_binds else 'FAILS'}")
         rows.append(dict(lob=lob, item="Premium (risk-based target)", lever=c["lever_label"], current=cur, required_minimum=req,
-                         recommended=rec, change=rec / cur - 1, p_de_negative_current=p_cur, p_de_negative_recommended=p_rec,
+                         recommended=rec, change=change, p_de_negative_current=p_cur, p_de_negative_recommended=p_rec,
                          de_quantile_recommended=q_rec, cash_npv_recommended=d["cash_npv"], de_npv_recommended=d["de_npv"],
                          de_margin_recommended=d["de_margin"], pv_loss_ratio_recommended=d["pv_loss_ratio"],
+                         de_tail_mean_current=_tail_mean(de_cur, tol), de_tail_mean_recommended=_tail_mean(de_rec, tol),
+                         design=(design["label"] if design else "current design"),
                          constraint=(f"PV loss ratio >= {c['min_pv_loss_ratio']:.0%}: {'met' if lr_ok else 'FAILS'}" if c["min_pv_loss_ratio"]
                                      else "state rate filing (no federal minimum loss ratio)"),
-                         market_reference=c["market_reference"], market_check=mkt, status=status,
+                         market_reference=ref, market_check=mkt, status=status, goals=goal_txt, members_phasing=members,
                          note=("current premium is " + f"{cur / req - 1:.1%}" + " above the minimum that meets the target") if rec == cur
                               else f"monthly ${rec / 12:,.2f} vs ${cur / 12:,.2f}"))
         if lob == "DENTAL_VISION" and c.get("price_response_lapse_multiplier"):
@@ -1495,7 +1595,8 @@ def pricing_solve() -> tuple[pd.DataFrame, pd.DataFrame]:
                              note="lapse does not respond to price in the model; this shows how much a price-driven lapse response would add"))
     # ---- Medicaid: price is fixed by the state; report the lever levels that would meet the target
     c = PRICING["lines"]["MEDICAID"]
-    q_cur, p_cur = _risk_stats(_mc_de("MEDICAID", lambda AA: None), tol)
+    de_md = _mc_de("MEDICAID", lambda AA: None)
+    q_cur, p_cur = _risk_stats(de_md, tol)
     d0 = _det("MEDICAID", A["MEDICAID"])
     any_ok = False
     for key, L in c["levers"].items():
@@ -1528,10 +1629,35 @@ def pricing_solve() -> tuple[pd.DataFrame, pd.DataFrame]:
                          constraint=f"MLR floor {c['min_mlr']:.0%} (remittance modelled)",
                          market_reference=None, market_check=mc_txt,
                          status="ACHIEVABLE" if feasible else "NOT ACHIEVABLE inside public ranges"))
+    # v4.4: contract terms the plan can negotiate with the state, each tested alone against the risk
+    # target on the same Monte Carlo draws. Unlike the levers above, a term changes who bears the risk,
+    # not what the business costs, so a term that meets the target is a condition of the bid.
+    term_ok = []
+    for T in c.get("negotiable_terms", []):
+        def mut(AA, T=T):
+            for key, v in T["set"].items():
+                _set_key(AA, "MEDICAID", key, v)
+        de_t = _mc_de("MEDICAID", mut)
+        q_t, p_t = _risk_stats(de_t, tol)
+        tmp = {"MEDICAID": copy.deepcopy(A["MEDICAID"])}; mut(tmp); d_t = _det("MEDICAID", tmp["MEDICAID"])
+        ok = p_t <= tol + 1e-12
+        if ok:
+            term_ok.append(T["label"])
+        rows.append(dict(lob="MEDICAID", item=f"Negotiable term: {T['label']}", lever="contract term (negotiated)",
+                         p_de_negative_current=p_cur, p_de_negative_recommended=p_t, de_quantile_recommended=q_t,
+                         de_npv_recommended=d_t["de_npv"], cash_npv_recommended=d_t["cash_npv"], pv_loss_ratio_recommended=d_t["pv_mlr"],
+                         de_tail_mean_current=_tail_mean(de_md, tol), de_tail_mean_recommended=_tail_mean(de_t, tol),
+                         status="MEETS TARGET with this term" if ok else "DOES NOT MEET the target alone",
+                         note=c.get("negotiable_terms_basis", "")))
+    if any_ok:
+        bid = "BID: a lever inside public ranges meets the target"
+    elif term_ok:
+        bid = "BID ONLY IF THE STATE AGREES TO: " + "; or ".join(term_ok)
+    else:
+        bid = "DO NOT BID AT THESE TERMS: no single lever inside public ranges, and no single negotiable term, meets the risk target"
     rows.append(dict(lob="MEDICAID", item="Bid recommendation", lever=c["lever_label"], p_de_negative_current=p_cur,
                      de_npv_recommended=d0["de_npv"], cash_npv_recommended=d0["cash_npv"],
-                     status=("BID: a lever inside public ranges meets the target" if any_ok else
-                             "DO NOT BID AT THESE TERMS: no single lever inside public ranges meets the risk target"),
+                     de_tail_mean_current=_tail_mean(de_md, tol), status=bid,
                      note="Capitation is state-set; negotiate terms, reduce capital need, or decline. The base uses MACPAC churn by rate cell; "
                           "equal churn by cell (swept) is materially worse: confirm the churn pattern with the state data book."))
     lines = pd.DataFrame(rows)

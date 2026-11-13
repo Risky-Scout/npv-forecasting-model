@@ -1,4 +1,4 @@
-# Model validation pack — NPV Forecasting Model v4.3.0
+# Model validation pack — NPV Forecasting Model v4.4.0
 
 For the independent reviewer (model risk). It lists what was tested, where the evidence is, and
 what remains unvalidated. Every result can be reproduced with `python run_all.py` (synthetic
@@ -8,7 +8,7 @@ mode, about 17 minutes) unless marked *offline*.
 
 | Field | Entry |
 |---|---|
-| Name / version | NPV Forecasting Model 4.3.0 |
+| Name / version | NPV Forecasting Model 4.4.0 |
 | Uses | New-business NPV and risk-based price / bid recommendations (Med Supp, D&V, Medicaid); in-force management forecast and A/E explanation for the existing book |
 | Not for | Reserving, rate filings, capital planning, financial reporting |
 | Implementations | Python (production engine); Excel workbook (independent formula rebuild, ties to the cent); Databricks notebook (Med Supp base cell, ties to the cent) |
@@ -28,13 +28,13 @@ mode, about 17 minutes) unless marked *offline*.
 | 6 | Implementation | Notebook base cell = engine | `code/databricks/npv_pipeline_databricks.py` | Ties to the cent |
 | 7 | Regression | v3 features off = v2; v4 features neutral = v3 | `tests/test_v3_model.py`, `tests/test_v4_model.py` | PASS (Medicaid compared at neutral contract terms; the shipped 2% withhold is tested separately) |
 | 8 | Mechanics | Profit-test identities; tax cost = PV of tax; DAC tax weights and PV; withhold timing identity; corridor hand calculation; directed-payment pass-through; lagged risk adjustment; waiting-period deferral; filing-response identity; rating bases at equal PV loss ratio; break-even position | `tests/test_v3_model.py`, `tests/test_v4_model.py` | PASS |
-| 9 | Pricing | Risk-based solve: τ-quantile of DE = 0 at the solved minimum; P(DE < 0) ≤ 10% at the recommendation; 65% minimum loss ratio cap; Medicaid bid rule; competitiveness flags | `tests/test_v4_model.py`, `output/npv/npv_pricing_solve.csv`, `medsupp_cell_pricing.csv` | PASS. Med Supp base cell meets the target as priced (portfolio 28.0% → 3.1% at recommended cell prices); D&V +7.1% (P = 9.9%); Medicaid: do not bid at these terms |
+| 9 | Pricing | Risk-based solve: τ-quantile of DE = 0 at the solved minimum; P(DE < 0) ≤ 10% at the recommendation; 65% minimum loss ratio cap; Medicaid bid rule; competitiveness flags | `tests/test_v4_model.py`, `output/npv/npv_pricing_solve.csv`, `medsupp_cell_pricing.csv` | PASS. Med Supp base cell meets the target as priced (portfolio 28.4% → 3.8% at recommended cell prices); D&V +7.1% (P = 9.9%); Medicaid: do not bid at these terms, including with a negotiated risk corridor (45.7%). v4.4 goals: in-force increase cap in the filing response, market limit enforced only against a credible reference, D&V fallback designs, worst-10% average DE reported |
 | 10 | Mechanics | Event-level backtest (Test A), simulator implements every Medicaid contract term | `output/backtest/test_a_*` | z = +1.11 / +0.75 / −0.49 |
 | 11 | Estimation | NPV error from estimating assumptions, against the generator's truth (Test B) | `output/backtest/test_b_estimation_error.csv` | Approved public Med Supp trend −$261,650 vs the generator's 6.0%; D&V $0. Measures only values that differ from the generator's (13 equal it) |
 | 12 | Estimation | **Trend estimator study** (30 seeds): bias, SE calibration, blend vs raw | `docs/validation/trend_estimator_study.md` (*offline*) | Normalized fits unbiased; bootstrap SE 0.86–1.09 of true SD, inflated by 1.16 in 03b; blend RMSE below raw on every line |
 | 13 | Forecast | BF / chain-ladder identities; roll-forward conservation; waterfall steps against independent calculations (the sum holds by construction); vintage reconstruction | `tests/test_v4_forecast.py`, asserts in 09–11 | PASS |
 | 14 | Forecast | Accuracy by horizon and cross-vintage bias | `output/forecast/forecast_accuracy_by_horizon.csv`, `forecast_bias_test.csv` | Incurred PMPM MAPE 2.3–6.7%; no persistent bias on any line or metric (12 tests); on the generator's own curves and payment pattern |
-| 15 | Risk | Process vs parameter risk (Test C); Monte Carlo attribution and response sensitivity | `output/backtest/test_c_*`, `output/npv/npv_monte_carlo_attribution.csv` | Ratios 3.1 / 1.0 / 5.5; Med Supp P(cash NPV < 0) 0.15–18.6% across the response strength; P(DE < 0) 0.3–8.6% across the volatilities (`npv_mc_parameter_sensitivity.csv`) |
+| 15 | Risk | Process vs parameter risk (Test C); Monte Carlo attribution and response sensitivity | `output/backtest/test_c_*`, `output/npv/npv_monte_carlo_attribution.csv` | Ratios 3.2 / 1.0 / 5.5; Med Supp P(cash NPV < 0) 0.56–18.6% across the response strength; P(DE < 0) 0.35–9.7% across the volatilities (`npv_mc_parameter_sensitivity.csv`) |
 | 16 | Governance | Unapproved or undispositioned sets refused in production. The engine re-checks the hash AND this run's 03b status. Governed configs are in the approval hash. The manifest withholds results unless the gate approved | `tests/test_v3_production.py`, `tests/test_v3_model.py`, `tests/test_v4_model.py` | PASS |
 | 17 | Assumptions | Every NPV assumption documented (public / statute / derived / judgment with range / setting); register matches the file; no pricing credibility to synthetic experience; synthetic-linked values disclosed | `config/assumption_basis.json`, `docs/ASSUMPTION_BASIS.md`, `tests/test_v4_model.py` | PASS: 89 entries, 40 judgment; block values checked; 17 synthetic-linked values flagged and recomputed from the generator's file |
 | 18 | Assumptions | Judgment values across their documented ranges (ASOP 56 §3.6.1) | `output/npv/npv_judgment_sensitivity.csv` | 32 sweeps (every judgment value is run here or in the tornado, Monte Carlo parameter table, response attribution or per-cell model points). Med Supp DE positive throughout; D&V negative except at pent-up 1.10 (+$4,865); Medicaid changes sign within 3 ranges (start-up, risk-adjustment capture, equal churn by cell) |

@@ -46,7 +46,7 @@
   },
   {
    "key": "global.model_version",
-   "value": "4.3.0",
+   "value": "4.4.0",
    "status": "M",
    "basis": "Model version tag (approvals are tied to it).",
    "sources": [],

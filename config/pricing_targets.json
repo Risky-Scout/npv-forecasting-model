@@ -1,7 +1,33 @@
 {
- "_readme": "v4.2 risk-based pricing targets for 04_npv_engine.pricing_solve(). Each line is priced so that the probability of a negative DE NPV in the Monte Carlo (parameter risk + process risk + filing response, 10,000 scenarios, common random numbers) does not exceed risk_tolerance: equivalently, the risk_tolerance-quantile of DE NPV is zero. DE NPV = 0 alone (break-even at the hurdle rate) would leave about a one-in-two chance of failing the hurdle, so the margin above break-even is sized by each line's own risk. Trend stays at its best estimate (the margin protects against trend coming in worse; it does not replace the assumption). Humana's corporate pricing policy sets risk_tolerance; 10% is the shipped default (judgment). Constraints are checked, never relaxed: a line whose target cannot be met inside them is reported as such (Medicaid: do not bid at these terms). This file is covered by the assumption approval hash.",
+ "_readme": "v4.2 risk-based pricing targets for 04_npv_engine.pricing_solve(). Each line is priced so that the probability of a negative DE NPV in the Monte Carlo (parameter risk + process risk + filing response, 10,000 scenarios, common random numbers) does not exceed risk_tolerance: equivalently, the risk_tolerance-quantile of DE NPV is zero. DE NPV = 0 alone (break-even at the hurdle rate) would leave about a one-in-two chance of failing the hurdle, so the margin above break-even is sized by each line's own risk. Trend stays at its best estimate (the margin protects against trend coming in worse; it does not replace the assumption). Humana's corporate pricing policy sets risk_tolerance; 10% is the shipped default (judgment). Constraints are checked, never relaxed: a line whose target cannot be met inside them is reported as such (Medicaid: do not bid at these terms). This file is covered by the assumption approval hash. v4.4: the company goals (safety, profit, members, market) are in 'goals'; D&V lists fallback benefit designs and Medicaid lists negotiable contract terms.",
  "risk_tolerance": 0.1,
  "risk_tolerance_status": "J (Humana corporate pricing policy; default 10%)",
+ "goals": {
+  "_readme": "v4.4 company goals. These are POLICY, not assumptions: every assumption in npv_assumptions.json stays a best estimate (ASOP 25 / 56), and the goals below only decide the levers (price, design, bid terms). An assumption is never moved to make a goal come out. Humana's pricing policy and risk appetite statement replace each default.",
+  "safety": {
+   "rule": "P(DE NPV < 0) <= risk_tolerance on every line (the same appetite for every line; lines differ in severity, not frequency).",
+   "severity_reported": "Average DE NPV in the worst risk_tolerance share of scenarios (tail mean, CTE). Reported, not constrained: the size of a tail loss is a capital and bid-committee decision, chiefly for a single Medicaid contract.",
+   "status": "J (Humana risk appetite statement)"
+  },
+  "profit": {
+   "rule": "DE NPV >= 0 at the hurdle rate (global.discount_rate) is a return of at least the hurdle on required capital. No separate margin target: the risk target already prices the margin above break-even to each line's own risk, and a second margin target would count that protection twice.",
+   "status": "P (hurdle: npv_assumptions.json global.discount_rate) / J (no second margin target)"
+  },
+  "members": {
+   "max_annual_increase": {
+    "MEDSUPP": 0.1,
+    "DENTAL_VISION": 0.1
+   },
+   "rule": "No in-force rate increase above max_annual_increase in one year. Enforced inside the Monte Carlo filing response: when claims run ahead of premium, a filing can close the gap only up to the cap, and the shortfall carries to the next filing. The cost of protecting members shows up as a higher P(DE < 0) and a higher premium needed today. Medicaid capitation is state-set, so the cap does not apply.",
+   "basis": "Judgment (member rate stability). Base filed increases (Med Supp 7.3%, D&V 3.5%) sit inside the cap, so the deterministic projection is unchanged; the cap binds only in adverse scenarios. A new-business reprice applied to in-force members on top of the annual increase is phased so the total stays within the cap.",
+   "status": "J (Humana pricing policy)"
+  },
+  "market": {
+   "max_above_reference": 0.05,
+   "rule": "A recommended premium may be at most max_above_reference above a CREDIBLE market reference (hard constraint). Against a low-confidence reference (a single public filing) it is a REVIEW flag only: one weak data point must not override the pricing. Each line states its reference confidence below.",
+   "status": "J (Humana pricing policy; replace references with competitor rate surveys)"
+  }
+ },
  "lines": {
   "MEDSUPP": {
    "lever": "annual_premium_year1",
@@ -30,7 +56,9 @@
     0.035
    ],
    "market_cell_basis": "Maryland Insurance Administration, Medicare Supplement premiums as of 2026-07-01: Plan N / Plan G at 65 across five carriers 0.65-0.90; HDG / G 0.18 (one carrier); Plan G age 65 to 85 premium steps 2.7%-3.5% a year. A cell priced outside these is flagged REVIEW (competitiveness).",
-   "portfolio_risk_check": "The risk target is also measured on the whole model-point portfolio (Monte Carlo per cell with common random numbers, mix-weighted), at current and at recommended cell prices."
+   "portfolio_risk_check": "The risk target is also measured on the whole model-point portfolio (Monte Carlo per cell with common random numbers, mix-weighted), at current and at recommended cell prices.",
+   "market_reference_confidence": "credible",
+   "market_reference_confidence_basis": "KFF national average from filed rates across carriers and states: credible as a ceiling for an age-65 new issue."
   },
   "DENTAL_VISION": {
    "lever": "annual_premium_year1",
@@ -40,7 +68,25 @@
    "market_reference": 468.0,
    "market_reference_basis": "Individual dental about $35/month, $39/month with vision (EMI filing): $468/yr. One public filing, low confidence.",
    "price_response_lapse_multiplier": 1.1,
-   "price_response_basis": "Judgment robustness check: lapse does not respond to price level in the model, so the solve is repeated with lapse 10% higher (relative) to show how much a price-driven lapse response would raise the required premium."
+   "price_response_basis": "Judgment robustness check: lapse does not respond to price level in the model, so the solve is repeated with lapse 10% higher (relative) to show how much a price-driven lapse response would raise the required premium.",
+   "market_reference_confidence": "low",
+   "market_reference_confidence_basis": "One public filing (EMI): the 5% limit is a REVIEW flag, not a constraint, until competitor rate surveys replace it.",
+   "fallback_designs": [
+    {
+     "label": "12-month wait on MAJOR",
+     "waiting_period_months": {
+      "MAJOR": 12
+     }
+    },
+    {
+     "label": "6-month BASIC, 12-month MAJOR (market norm)",
+     "waiting_period_months": {
+      "BASIC": 6,
+      "MAJOR": 12
+     }
+    }
+   ],
+   "fallback_designs_basis": "Used ONLY if no premium inside the member and market limits meets the risk target: price comes first, so members keep immediate access to care whenever price alone can do it. Ordered from least to most restrictive and capped at the market norm. Values are upper bounds (lapse and anti-selection do not respond to the wait)."
   },
   "MEDICAID": {
    "lever": null,
@@ -75,7 +121,16 @@
      ],
      "public_basis": "Industry admin 7.7% of revenue net of taxes (x $510 = $39.30); Medicaid-focused median $46.41 PMPM"
     }
-   }
+   },
+   "negotiable_terms": [
+    {
+     "label": "Symmetric risk corridor around an 88% MLR (plan keeps +/-2 pt, shares 50% from 2-5 pt, state takes the rest)",
+     "set": {
+      "contract_terms.mlr_rule.type": "corridor"
+     }
+    }
+   ],
+   "negotiable_terms_basis": "Terms a plan can ask a state for in a new-state procurement. A risk corridor is common in new or changing programs (CMS permits risk-sharing mechanisms, 42 CFR 438.6(b)); its parameters are in npv_assumptions.json MEDICAID.contract_terms.mlr_rule.corridor. Capitation is not a lever. Each term is tested alone against the risk target; a BID recommendation names the term it depends on."
   }
  }
 }

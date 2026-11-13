@@ -116,7 +116,11 @@ def test_process_risk_with_zero_volatility_is_level_shifts_only():
         assert np.allclose(eng.monte_carlo(assumptions=AA)[col].values, base[col].values, rtol=1e-9, atol=1e-3), col
 
 
-def test_zero_strength_response_equals_no_response():
+def test_zero_strength_response_equals_no_response(monkeypatch):
+    # The response mechanism is neutral at h = 0. The v4.4 member cap is a separate policy that acts on
+    # filings when the response is on, so it is switched off here to test the mechanism alone
+    # (the cap itself: test_increase_cap_is_neutral_when_it_cannot_bind_and_holds_when_it_does).
+    monkeypatch.setattr(eng, "_PRICING_GOALS", {})
     AA = copy.deepcopy(A)
     for l in ("MEDSUPP", "DENTAL_VISION"):
         AA["monte_carlo"]["management_response"][l]["gap_closure_per_filing"] = 0.0
@@ -553,8 +557,19 @@ def test_pricing_medicaid_bid_recommendation_follows_the_lever_feasibility(prici
     levers = md[md.item.str.startswith("Required")]
     assert len(levers) == len(eng.PRICING["lines"]["MEDICAID"]["levers"])
     feasible = (levers.status == "ACHIEVABLE").any()
+    terms = md[md.item.str.startswith("Negotiable term")]
+    assert len(terms) == len(eng.PRICING["lines"]["MEDICAID"].get("negotiable_terms", []))
+    term_ok = (terms.p_de_negative_recommended <= eng.PRICING["risk_tolerance"] + 1e-12)
+    assert ((terms.status == "MEETS TARGET with this term") == term_ok).all()
     rec = md[md.item == "Bid recommendation"].iloc[0].status
-    assert rec.startswith("BID") if feasible else rec.startswith("DO NOT BID")
+    # v4.4: a lever inside public ranges -> BID; otherwise a negotiable term that meets the target
+    # -> BID ONLY IF the state agrees to it; otherwise DO NOT BID.
+    if feasible:
+        assert rec.startswith("BID:")
+    elif term_ok.any():
+        assert rec.startswith("BID ONLY IF THE STATE AGREES TO")
+    else:
+        assert rec.startswith("DO NOT BID")
     for r in levers.itertuples():                    # each required level really meets the target
         if r.required_minimum is not None and not pd.isna(r.required_minimum):
             key = [k for k, L in eng.PRICING["lines"]["MEDICAID"]["levers"].items() if L["label"] == r.lever][0]
@@ -580,3 +595,86 @@ def test_pricing_model_points_carry_the_base_margin_or_hit_the_loss_ratio_cap(pr
     risk = lines[lines.item == "Portfolio risk check (all model points)"].iloc[0]
     assert abs(risk.p_de_negative_recommended - port.p_de_negative_required) < 1e-12
     assert risk.status.startswith("MEETS") == (port.p_de_negative_required <= eng.PRICING["risk_tolerance"])
+
+
+# ---------------------------------------------------------------- v4.4 company goals
+def test_goals_are_policy_read_from_the_pricing_config_not_the_assumptions():
+    # The goals live in config/pricing_targets.json; none of them is an assumption value.
+    assert eng._PRICING_GOALS == eng.PRICING["goals"]
+    assert "goals" not in A and all("max_annual_increase" not in str(A[l]) for l in ("MEDSUPP", "DENTAL_VISION"))
+
+
+def test_increase_cap_is_neutral_when_it_cannot_bind_and_holds_when_it_does():
+    Y, r, tau = 15, 0.073, 0.065
+    rng = np.random.default_rng(7)
+    dev = rng.normal(0.0, 0.03, size=(Y, 500))
+    noise = rng.normal(0.0, 0.01, size=(Y, 500))
+    resp = {"lag_years": 2, "gap_closure_per_filing": 0.5}
+    free = eng.management_rate_path(r, tau, dev, noise, resp)
+    assert np.array_equal(free, eng.management_rate_path(r, tau, dev, noise, resp, cap=None))
+    assert np.array_equal(free, eng.management_rate_path(r, tau, dev, noise, resp, cap=10.0))   # never reached
+    capped = eng.management_rate_path(r, tau, dev, noise, resp, cap=0.10)
+    assert (r + capped <= 0.10 + 1e-12).all()                       # no filing above the cap
+    assert (r + free > 0.10).any()                                  # ...and the cap really bound somewhere
+    below = r + free <= 0.10
+    first = np.argmax(~below, axis=0)                               # filings before the first capped one are unchanged
+    for j in range(dev.shape[1]):
+        k = first[j] if (~below[:, j]).any() else Y
+        assert np.allclose(capped[:k, j], free[:k, j])
+    # The shortfall is carried: after a capped filing the next one is at least as large as without the cap.
+    j = int(np.argmax((~below).any(axis=0)))
+    k = int(first[j])
+    if k + 1 < Y:
+        assert capped[k + 1, j] >= free[k + 1, j] - 1e-12 or r + capped[k + 1, j] >= 0.10 - 1e-12
+    # The cap acts on filings: without a filing response (v3 basis) the path is the noise, unchanged.
+    assert np.array_equal(eng.management_rate_path(r, tau, dev, noise, None, cap=0.10), noise)
+
+
+def test_phasing_hand_calculation():
+    # D&V: +7.1% reprice on a 3.5% base filing = 10.85% in one filing > 10%: each filing can add
+    # 1.10 / 1.035 - 1 = 6.28% beyond the base, so ceil(ln 1.071 / ln 1.0628) = 2 filings.
+    assert "phase over 2 filings" in eng._phasing(0.071, 0.035, 0.10)
+    assert "within the 10% cap" in eng._phasing(0.05, 0.035, 0.10)
+    assert eng._phasing(0.0, 0.073, 0.10).startswith("no in-force increase")
+    assert "cannot be phased" in eng._phasing(0.05, 0.10, 0.10)
+
+
+def test_tail_mean_is_the_average_of_the_worst_share():
+    de = np.arange(1, 101, dtype=float)                             # 1..100
+    assert eng._tail_mean(de, 0.10) == pytest.approx(np.mean(np.arange(1, 11)), abs=0.6)
+
+
+def test_premium_rows_report_every_goal(pricing):
+    lines, _ = pricing
+    for lob in ("MEDSUPP", "DENTAL_VISION"):
+        r = lines[(lines.lob == lob) & (lines.item == "Premium (risk-based target)")].iloc[0]
+        for g_ in ("safety:", "profit:", "members:", "market:"):
+            assert g_ in r.goals
+        assert r.de_tail_mean_recommended <= r.de_quantile_recommended + 1e-9   # the tail mean sits below the quantile
+    dv = lines[(lines.lob == "DENTAL_VISION") & (lines.item == "Premium (risk-based target)")].iloc[0]
+    # D&V's reference is one low-confidence filing: over the 5% limit it is flagged, not enforced.
+    assert eng.PRICING["lines"]["DENTAL_VISION"]["market_reference_confidence"] == "low"
+    assert dv.design == "current design" and "a flag, not a limit" in dv.market_check
+
+
+def test_credible_market_limit_moves_dv_to_the_least_restrictive_design_that_meets_every_goal(monkeypatch):
+    # Treat the D&V reference as credible: the 5% limit then binds the price, so the solve must try the
+    # fallback designs in order and pick the first one that meets the risk target inside the limit.
+    P = copy.deepcopy(eng.PRICING)
+    P["lines"]["DENTAL_VISION"]["market_reference_confidence"] = "credible"
+    monkeypatch.setattr(eng, "PRICING", P)
+    lines, _ = eng.pricing_solve()
+    r = lines[(lines.lob == "DENTAL_VISION") & (lines.item == "Premium (risk-based target)")].iloc[0]
+    cap = P["lines"]["DENTAL_VISION"]["market_reference"] * (1 + P["goals"]["market"]["max_above_reference"])
+    labels = [d_["label"] for d_ in P["lines"]["DENTAL_VISION"]["fallback_designs"]]
+    if r.status.startswith("CANNOT"):
+        assert r.design == "current design" and "LIMIT BINDS" in r.market_check
+    else:
+        assert r.status.endswith("WITH DESIGN") and r.design in labels
+        assert r.recommended <= cap + 1e-9 and r.p_de_negative_recommended <= P["risk_tolerance"] + 1e-12
+        # least restrictive first: every earlier design needed a price above the limit
+        for lab in labels[:labels.index(r.design)]:
+            dz = next(d_ for d_ in P["lines"]["DENTAL_VISION"]["fallback_designs"] if d_["label"] == lab)
+            m = eng._solve_quantile_zero("DENTAL_VISION", "annual_premium_year1", 0.5, 2.0, P["risk_tolerance"],
+                                         extra=eng._dv_design(dz["waiting_period_months"]))
+            assert m * r.current > cap

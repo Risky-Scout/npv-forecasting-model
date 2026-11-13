@@ -1,4 +1,4 @@
-# NPV Forecasting Model v4.3.0 — Model Documentation
+# NPV Forecasting Model v4.4.0 — Model Documentation
 
 Prepared in the spirit of ASOP No. 56 (Modeling), No. 41 (Actuarial Communications), No. 23 (Data
 Quality) and No. 25 (Credibility Procedures). All results quoted are on a synthetic practice book
@@ -223,7 +223,7 @@ End-of-month accounting, defined in `04_npv_engine.py`, `profit_test()`.
 - **Monte Carlo parameter sensitivity (v4.1):** every volatility (the four level-shift SDs and
   the three process-risk SDs), the AR(1) φ and the trend / Medicaid update correlation, nine
   parameters, at the ends of their ranges
-  (`npv_mc_parameter_sensitivity.csv`). Med Supp P(DE < 0) runs from 0.3% to 8.6%, driven by the
+  (`npv_mc_parameter_sensitivity.csv`). Med Supp P(DE < 0) runs from 0.35% to 9.7%, driven by the
   trend level-shift SD.
 - **D&V product options (v4.1):** waiting periods on the base assumptions (`dv_product_options.csv`).
   These are upper bounds.
@@ -312,7 +312,7 @@ The other steps are tested against independent calculations (`tests/test_v4_fore
   level each driver would need, however far it is from break-even.
 - **Rules:** `config/monitoring_rules.json`.
 
-### 4.12 Risk-based pricing solve (v4.2; `pricing_solve()`, `config/pricing_targets.json`)
+### 4.12 Risk-based pricing solve (v4.2, company goals v4.4; `pricing_solve()`, `config/pricing_targets.json`)
 - **Target.** P(DE NPV < 0) ≤ τ in the Monte Carlo, i.e. the τ-quantile of DE NPV = 0, with τ = 10%
   (Humana's pricing policy; the default is judgment). The quantile is solved with Brent's method
   on the full Monte Carlo. Common random numbers make it move smoothly with the lever. DE NPV = 0
@@ -329,7 +329,7 @@ The other steps are tested against independent calculations (`tests/test_v4_fore
   - Plan relativities and the implied attained-age step are compared with Maryland's 2026 filed
     rates; values outside them are flagged REVIEW.
   - The risk target is also measured on the whole portfolio: a Monte Carlo per model point with
-    common random numbers, mix-weighted. P(DE < 0) is 28.0% as priced and 3.1% at the
+    common random numbers, mix-weighted. P(DE < 0) is 28.4% as priced and 3.8% at the
     recommended cell prices.
   - The result relies on the filing response: with none, the base cell's P(DE < 0) is 24.7%.
 - **D&V:**
@@ -345,9 +345,37 @@ The other steps are tested against independent calculations (`tests/test_v4_fore
     not achievable, and a lever that already meets the target is reported achievable.
   - If no lever is achievable, the recommendation is "do not bid at these terms". The 85% MLR
     floor is modelled (remittance), so it caps the upside in every solve.
+- **Company goals (v4.4, `goals` in `config/pricing_targets.json`).** Goals are policy, kept
+  apart from the assumptions: every assumption stays a best estimate, and the goals decide only
+  the levers. No assumption is moved to make a goal come out.
+  - *Safety:* P(DE < 0) ≤ τ on every line. The average DE in the worst τ share of scenarios
+    (tail mean) is reported beside it, because the probability says how often a line loses and the
+    tail mean says how much. Medicaid's worst-10% average is −$30.3M as bid.
+  - *Profit:* DE NPV ≥ 0 at the 8.5% hurdle is a return of at least the hurdle on required
+    capital. There is no second margin target: the risk target already prices the margin to each
+    line's risk, and a second target would count it twice.
+  - *Members:* no in-force increase above 10% in one year (Med Supp, D&V). The cap acts inside the
+    Monte Carlo filing response: a filing that would exceed it is held at the cap and the rest of
+    the gap carries to later filings, again capped. Base filings (7.3%, 3.5%) sit inside it, so the
+    deterministic results are unchanged; Med Supp P(DE < 0) moves from 3.0% to 3.6%, the price of
+    protecting members in adverse years. A reprice applied to existing members on top of the base
+    increase is phased (D&V: 10.9% in one filing, so 2 filings).
+  - *Market:* at most 5% above a **credible** reference (a hard limit). Against a single
+    low-confidence filing (D&V) the limit is a REVIEW flag only. If the limit binds, D&V benefit
+    designs are tried, least restrictive first and capped at the market norm, before the line is
+    reported as unable to meet every goal. Price comes first, so members keep immediate access to
+    care wherever price alone can meet the target.
+  - *Medicaid terms:* each negotiable term (a symmetric risk corridor around an 88% MLR) is tested
+    alone. The corridor cuts the worst-10% average DE from −$30.3M to −$9.9M but the chance of a
+    loss only from 47.2% to 45.7%: it limits how much the contract can lose, not how often. A term
+    that meets the target makes the recommendation "bid only if the state agrees to it".
 - **Verification:**
   - `tests/test_v4_model.py` checks that the τ-quantile is zero at the solved minimum, that
-    P ≤ τ at the recommendation, the constraints, the cap logic and the bid rule.
+    P ≤ τ at the recommendation, the constraints, the cap logic and the bid rule; v4.4 adds the
+    goals (policy file, not assumptions), the increase cap (neutral when it cannot bind, held when
+    it does, the gap carried), the phasing and tail-mean hand calculations, the per-goal report,
+    and a credible-reference run that moves D&V to the least restrictive design that meets every
+    goal.
   - `tests/e2e_excel_pricing.py` rebuilds the workbook at the recommended premiums and requires
     the to-the-cent tie and the pricing table's DE NPV.
 
@@ -431,7 +459,7 @@ the filing-response attribution and the per-cell model-point table), model setti
 | **Excel rebuild, non-neutral v4 settings** | That the v4 formulas (withhold, directed payments, acuity path, corridor, D&V categories and waiting periods) are right, which a tie at neutral settings cannot show; three variants cover the corridor loss side, gain side and floor binding | Ties to the cent in all three |
 | Backtest Test A | Mechanics and timing unbiased; the simulator implements every Medicaid contract term (v4.1) | z = +1.11 / +0.75 / −0.49 |
 | Backtest Test B (against the generator's truth) | NPV error of the estimation process; it can only measure values that differ from the generator's (13 equal it) | Approved public Med Supp trend (6.5%) vs the generator's arbitrary 6.0%: −$261,650; D&V public 3.5% = generator 3.5%: $0; v3 raw D&V fit +$21,993 |
-| Backtest Test C | Parameter vs process risk | 3.1× / 1.0× / 5.5× |
+| Backtest Test C | Parameter vs process risk | 3.2× / 1.0× / 5.5× |
 | **Trend estimator study** (30 seeds) | Estimator bias, SE calibration, blend vs raw | Normalized fits unbiased; bootstrap SE 0.86–1.09 of the true SD before the 1.16 inflation; blend RMSE below raw on every line; v3 D&V raw fit biased −1.75 pt |
 | **Forecast vintages** (5) | Forecast accuracy by horizon; persistent bias (on the generator's own curves and payment pattern: known curves) | Incurred PMPM MAPE 2.3–6.7%; no persistent bias on any line or metric (12 tests) |
 | Regression | Every change attributable | v3 off = v2; v4 neutral = v3 (Medicaid at neutral contract terms) |
@@ -440,7 +468,7 @@ the filing-response attribution and the per-cell model-point table), model setti
 | Production end to end (two phases) | Gate stops on an expired exception; mapping changes layout, never values | Pass |
 | **Databricks job definition, executed locally** | Dependencies, clusters, files, requirements and placeholders valid; 17 tasks run in topological order in production mode against extracts and reproduce the release run | Pass |
 | **Excel rebuild at the v4.2 recommended premiums** | The pricing recommendation is reproduced independently | Ties to the cent; DE NPV equals the pricing table |
-| Automated tests (113) | Controls fail when they should; every mechanic neutral at neutral settings; assumption register | All pass |
+| Automated tests (119) | Controls fail when they should; every mechanic neutral at neutral settings; assumption register | All pass |
 
 **What validation here cannot show.** Whether the assumptions are right for Humana's business:
 - Test A uses the model's own assumptions.
@@ -505,7 +533,7 @@ They are boundaries of a model built outside Humana, not defects, and each has a
 | Rating-basis comparison holds issue mix, lapse and anti-selection fixed | Actuarial equivalence before selection effects; community rating is optimistic | Stated with the results | Market and lapse response by basis from Med Supp pricing |
 | Medicaid admin is a flat PMPM across rate cells | Drives the sign under MACPAC churn by cell | Swept and disclosed | Per-cell admin from the state data |
 | No active-life reserve; tax reserves = statutory; tax losses used immediately; capital as % of annualized paid claims | DE modestly overstated; issue-age DE not reported | Pricing-grade use only (§1); rating bases on cash NPV | Valuation, Corporate Tax and the capital model |
-| Monte Carlo volatilities, correlations and filing-response strength are judgment | Tail probabilities move materially (Med Supp P(cash < 0) 0.15–18.6% across the response strength; P(DE < 0) 0.3–8.6% across the volatilities) | Attribution and parameter table show the range | `estimate_mc_parameters.py` on Humana history |
+| Monte Carlo volatilities, correlations and filing-response strength are judgment | Tail probabilities move materially (Med Supp P(cash < 0) 0.56–18.6% across the response strength; P(DE < 0) 0.35–9.7% across the volatilities) | Attribution and parameter table show the range | `estimate_mc_parameters.py` on Humana history |
 | Synthetic forecast vintages use book lapse estimated on the full period and the generator's curves | Hindsight and known-curve advantage | Stated with the accuracy results | Real vintages from the registry |
 | Model points are cohorts by band, not seriatim; lapse and anti-selection don't vary by age or plan | Mix within a band averaged | Base point asserted equal to the headline cohort | Policy-level points in Databricks; lapse by age and plan |
 | Deterministic base uses the filing plan; the filing response is in the Monte Carlo only | Deterministic NPV ignores management response | Response modelled and attributed | Filing-cycle plan from Med Supp pricing |

@@ -3,7 +3,7 @@
  "global": {
   "discount_rate": 0.085,
   "expense_inflation": 0.03,
-  "model_version": "4.3.0",
+  "model_version": "4.4.0",
   "features": {
    "_readme": "Model features. Setting every v3 flag to false reproduces version 2 exactly; the v4 flags (medicaid_contract_terms, dv_benefit_categories, mc_process_risk, mc_management_response) are each neutral at their neutral settings and are tested to reproduce v3 (tests/test_v4_model.py). The shipped Medicaid contract terms are not all neutral (2% quality withhold, v4.1).",
    "antiselective_shock_lapse": true,

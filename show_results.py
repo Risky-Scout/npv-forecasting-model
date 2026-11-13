@@ -80,10 +80,18 @@ for r in pricing:
             print(f"  Dental & Vision: {status.lower()} ${float(r['current']):,.2f} -> ${float(r['recommended']):,.2f} a year "
                   f"({float(r['change']) * 100:+.1f}%, {r['note']}); P(DE < 0) "
                   f"{pct(r['p_de_negative_current'])} -> {pct(r['p_de_negative_recommended'])}; {r['market_check']}")
+            if r.get("design") and r["design"] != "current design":            # v4.4: a fallback design was needed
+                print(f"    design: {r['design']}")
+            if r.get("members_phasing"):                                       # v4.4 member goal
+                print(f"    members: {r['members_phasing']}")
     elif item.startswith("Portfolio risk check"):
         print(f"  Med Supp portfolio: P(DE < 0) {pct(r['p_de_negative_current'])} -> "
               f"{pct(r['p_de_negative_recommended'])} at the recommended cell prices "
               f"(DE {money(r['de_npv_recommended'])}); details in output/npv/medsupp_cell_pricing.csv")
+    elif item.startswith("Negotiable term"):                                 # v4.4: terms the plan can negotiate
+        print(f"  Medicaid, {item[len('Negotiable term: '):].split(' (')[0].lower()}: P(DE < 0) "
+              f"{pct(r['p_de_negative_current'])} -> {pct(r['p_de_negative_recommended'])}; "
+              f"worst-10% average DE {money(r['de_tail_mean_current'])} -> {money(r['de_tail_mean_recommended'])}")
     elif item == "Bid recommendation":
         print(f"  Medicaid: {status.lower()}. {r['note']}")
 
